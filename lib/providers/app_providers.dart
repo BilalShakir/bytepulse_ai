@@ -23,13 +23,15 @@ class DemoUser {
   });
 }
 
+final googleAuthSignedInProvider = StateProvider<bool>((ref) => false);
+
 final demoUserProvider = StateProvider<DemoUser?>((ref) => null);
 
 // Navigation tab index (0: Home, 1: Explore, 2: Gemini, 3: Alerts, 4: Profile)
 final activeTabProvider = StateProvider<int>((ref) => 0);
 
 // Onboarding & Active Engineering Role
-final isOnboardingOpenProvider = StateProvider<bool>((ref) => true);
+final isOnboardingOpenProvider = StateProvider<bool>((ref) => false);
 final selectedRoleProvider = StateProvider<String>((ref) => 'ai_ml');
 final followedChannelsProvider = StateProvider<Set<String>>((ref) => {'ai_tools', 'gpus_hw', 'cloud_infra', 'dev_tools'});
 
@@ -373,16 +375,10 @@ class ChatNotifier extends StateNotifier<List<ChatMessage>> {
           ChatMessage(
             id: 'msg-1',
             sender: 'assistant',
-            text: 'Hello Alex! I am your Live Gemini Enterprise Agent. Tap any prompt chip or ask a query grounded in your technical intelligence feed.',
+            text: '### 👋 Welcome to Live Gemini Agent\n\nI am your **Gemini Enterprise Agent** in BytePulse AI. I deliver real-time technical analysis grounded in your developer feeds.\n\n• Ask about high-throughput GPU inference & FP8 quantization.\n• Synthesize system architecture trade-offs & security alerts.\n• Generate PyTorch / vLLM benchmark scripts.',
             confidence: '99.4%',
             citations: ['Hacker News Thread', 'Google Cloud Release Notes'],
             suggestedTopic: 'DeepSeek Distillation Architecture',
-            codeSnippet: '''import torch
-from vllm import LLM, SamplingParams
-
-llm = LLM(model="deepseek-ai/DeepSeek-R1-Distill-Qwen-14B")
-params = SamplingParams(temperature=0.6, max_tokens=1024)
-outputs = llm.generate(["Optimize tensor parallelism"], params)''',
           ),
         ]);
 
@@ -429,11 +425,14 @@ outputs = llm.generate(["Optimize tensor parallelism"], params)''',
 
     state = [...state, assistantMsg];
 
+    final conversationHistory = List<ChatMessage>.from(state.where((m) => m.id != assistantMsgId));
+
     final geminiService = GeminiService();
     final stream = geminiService.streamGeminiResponse(
       prompt: promptText,
       groundedCard: groundedCard,
       customContextTitle: contextTitle,
+      history: conversationHistory,
     );
 
     var currentAccumulatedText = '';
@@ -490,7 +489,6 @@ final chatMessagesProvider = StateNotifierProvider<ChatNotifier, List<ChatMessag
 // Alerts Relevance Slider
 final relevanceLevelProvider = StateProvider<double>((ref) => 2.0);
 final quietHoursProvider = StateProvider<bool>((ref) => false);
-final googleAuthSignedInProvider = StateProvider<bool>((ref) => false);
 
 // Saved Library Notifier with Firestore Integration
 class SavedLibraryNotifier extends StateNotifier<List<SavedItem>> {

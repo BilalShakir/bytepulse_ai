@@ -397,73 +397,10 @@ class _GeminiAgentScreenState extends ConsumerState<GeminiAgentScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              msg.text,
-              style: const TextStyle(fontSize: 13, color: AIGlowColors.inkSlate, height: 1.4),
-            ),
-            if (msg.codeSnippet != null) ...[
+            _buildFormattedMarkdownText(context, msg.text),
+            if (msg.codeSnippet != null && msg.codeSnippet!.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: const BoxDecoration(
-                        color: Colors.white10,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(8),
-                          topRight: Radius.circular(8),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'PYTHON 3.11',
-                            style: TextStyle(fontSize: 10, color: Colors.white70),
-                          ),
-                          InkWell(
-                            onTap: () {
-                              Clipboard.setData(ClipboardData(text: msg.codeSnippet!));
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Code copied to clipboard!'),
-                                  duration: Duration(seconds: 2),
-                                ),
-                              );
-                            },
-                            child: const Row(
-                              children: [
-                                Icon(Icons.copy, size: 12, color: AIGlowColors.electricCyan),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Copy Code',
-                                  style: TextStyle(fontSize: 10, color: AIGlowColors.electricCyan),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Text(
-                        msg.codeSnippet!,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontFamily: 'JetBrains Mono',
-                          color: Color(0xFF38BDF8),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              _buildCodeConsoleWidget(context, 'PYTHON 3.11', msg.codeSnippet!),
             ],
             if (msg.suggestedTopic != null && msg.suggestedTopic!.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -495,12 +432,16 @@ class _GeminiAgentScreenState extends ConsumerState<GeminiAgentScreen> {
                     children: [
                       const Icon(Icons.add_circle_outline, size: 14, color: AIGlowColors.electricCyan),
                       const SizedBox(width: 6),
-                      Text(
-                        '➕ Add "${msg.suggestedTopic}" to My Feeds',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: AIGlowColors.electricCyan,
+                      Flexible(
+                        child: Text(
+                          '➕ Add "${msg.suggestedTopic}" to My Feeds',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: AIGlowColors.electricCyan,
+                          ),
                         ),
                       ),
                     ],
@@ -509,19 +450,22 @@ class _GeminiAgentScreenState extends ConsumerState<GeminiAgentScreen> {
               ),
             ],
             const SizedBox(height: 8),
-            Row(
-              children: [
-                const Text('Sources: ', style: TextStyle(fontSize: 10, color: AIGlowColors.mediumSlate)),
-                ...msg.citations.map((c) => Padding(
-                      padding: const EdgeInsets.only(right: 4),
-                      child: Chip(
-                        label: Text(c, style: const TextStyle(fontSize: 9, color: AIGlowColors.electricCyan)),
-                        backgroundColor: AIGlowColors.iceWhite,
-                        padding: EdgeInsets.zero,
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                    )),
-              ],
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  const Text('Sources: ', style: TextStyle(fontSize: 10, color: AIGlowColors.mediumSlate)),
+                  ...msg.citations.map((c) => Padding(
+                        padding: const EdgeInsets.only(right: 4),
+                        child: Chip(
+                          label: Text(c, style: const TextStyle(fontSize: 9, color: AIGlowColors.electricCyan)),
+                          backgroundColor: AIGlowColors.iceWhite,
+                          padding: EdgeInsets.zero,
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      )),
+                ],
+              ),
             ),
             const SizedBox(height: 6),
             InkWell(
@@ -569,6 +513,175 @@ class _GeminiAgentScreenState extends ConsumerState<GeminiAgentScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildFormattedMarkdownText(BuildContext context, String rawText) {
+    final List<Widget> children = [];
+    final lines = rawText.split('\n');
+
+    bool inCodeBlock = false;
+    String codeLanguage = 'CODE';
+    final StringBuffer codeBuffer = StringBuffer();
+
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i];
+
+      if (line.trim().startsWith('```')) {
+        if (inCodeBlock) {
+          // Close current code block
+          inCodeBlock = false;
+          children.add(const SizedBox(height: 6));
+          children.add(_buildCodeConsoleWidget(context, codeLanguage, codeBuffer.toString().trim()));
+          children.add(const SizedBox(height: 6));
+          codeBuffer.clear();
+        } else {
+          // Start new code block
+          inCodeBlock = true;
+          final langMatch = line.trim().substring(3).trim();
+          codeLanguage = langMatch.isNotEmpty ? langMatch.toUpperCase() : 'CODE';
+        }
+        continue;
+      }
+
+      if (inCodeBlock) {
+        codeBuffer.writeln(line);
+        continue;
+      }
+
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) {
+        children.add(const SizedBox(height: 4));
+        continue;
+      }
+
+      if (trimmed.startsWith('### ') || trimmed.startsWith('#### ')) {
+        final title = trimmed.replaceAll('#', '').trim();
+        children.add(Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 4),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AIGlowColors.inkSlate,
+              letterSpacing: -0.2,
+            ),
+          ),
+        ));
+      } else if (trimmed.startsWith('•') || trimmed.startsWith('*') || trimmed.startsWith('-')) {
+        final content = trimmed.substring(1).trim();
+        children.add(Padding(
+          padding: const EdgeInsets.only(left: 6, bottom: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('• ', style: TextStyle(fontWeight: FontWeight.bold, color: AIGlowColors.electricCyan)),
+              Expanded(
+                child: Text(
+                  content,
+                  style: const TextStyle(fontSize: 13, color: AIGlowColors.inkSlate, height: 1.4),
+                ),
+              ),
+            ],
+          ),
+        ));
+      } else {
+        children.add(Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Text(
+            trimmed,
+            style: const TextStyle(fontSize: 13, color: AIGlowColors.inkSlate, height: 1.4),
+          ),
+        ));
+      }
+    }
+
+    if (inCodeBlock && codeBuffer.isNotEmpty) {
+      children.add(_buildCodeConsoleWidget(context, codeLanguage, codeBuffer.toString().trim()));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    );
+  }
+
+  Widget _buildCodeConsoleWidget(BuildContext context, String lang, String code) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFF334155)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: const BoxDecoration(
+              color: Color(0xFF1E293B),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(10),
+                topRight: Radius.circular(10),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.terminal, size: 14, color: AIGlowColors.electricCyan),
+                    const SizedBox(width: 6),
+                    Text(
+                      lang,
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70, letterSpacing: 0.8),
+                    ),
+                  ],
+                ),
+                InkWell(
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: code));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Code copied to clipboard!'),
+                        backgroundColor: AIGlowColors.electricCyan,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  child: const Row(
+                    children: [
+                      Icon(Icons.copy, size: 12, color: AIGlowColors.electricCyan),
+                      SizedBox(width: 4),
+                      Text(
+                        'Copy Code',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AIGlowColors.electricCyan),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Text(
+                code,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                  color: Color(0xFF38BDF8),
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -73,8 +73,8 @@ class FirebaseService {
 
   static User signInDemoUser({
     String uid = 'demo-dev-101',
-    String displayName = 'Test Developer',
-    String email = 'dev@bytepulse.ai',
+    String displayName = 'Alex Rivers (Senior AI/ML Engineer)',
+    String email = 'alex.rivers@bytepulse.ai',
     String photoUrl = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
   }) {
     _demoUser = MockFirebaseUser(
@@ -87,14 +87,14 @@ class FirebaseService {
     return _demoUser!;
   }
 
-  static Future<UserCredential?> signInWithGoogle() async {
+  static Future<User?> signInWithGoogle() async {
     try {
-      if (!_initialized) {
-        await initializeFirebase();
-      }
-      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      if (googleUser == null) return null;
+      if (googleUser == null) {
+        debugPrint("Google Sign-In canceled by user.");
+        return null;
+      }
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final OAuthCredential credential = GoogleAuthProvider.credential(
@@ -102,16 +102,138 @@ class FirebaseService {
         idToken: googleAuth.idToken,
       );
 
-      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-      if (userCredential.user != null) {
-        _demoUser = null;
-        _authController.add(userCredential.user);
+      if (_initialized) {
+        final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+        if (userCredential.user != null) {
+          _demoUser = null;
+          _authController.add(userCredential.user);
+          return userCredential.user;
+        }
       }
-      return userCredential;
+
+      // If Firebase Auth is not connected, create user profile from Google OAuth details
+      return signInDemoUser(
+        uid: googleUser.id,
+        displayName: googleUser.displayName ?? 'Google Developer',
+        email: googleUser.email,
+        photoUrl: googleUser.photoUrl ?? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+      );
     } catch (e) {
-      debugPrint("Google Sign-In caught safely: $e");
+      debugPrint("GOOGLE SIGN-IN NATIVE ERROR: $e");
       return null;
     }
+  }
+
+  static final Map<String, Map<String, String>> _userRegistry = {
+    'alex.rivers@bytepulse.ai': {
+      'password': 'Password123',
+      'name': 'Alex Rivers',
+      'role': 'ai_ml',
+      'uid': 'demo-dev-101',
+      'photo': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+    },
+    'sarah.chen@bytepulse.ai': {
+      'password': 'Password123',
+      'name': 'Sarah Chen',
+      'role': 'architect',
+      'uid': 'demo-dev-102',
+      'photo': 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=250&q=80',
+    },
+    'marcus.vance@bytepulse.ai': {
+      'password': 'Password123',
+      'name': 'Marcus Vance',
+      'role': 'devops',
+      'uid': 'demo-dev-103',
+      'photo': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80',
+    },
+  };
+
+  static Future<User?> signUpWithEmailAndPassword({
+    required String email,
+    required String password,
+    required String displayName,
+    required String role,
+  }) async {
+    final cleanEmail = email.trim().toLowerCase();
+
+    // Verify if account already exists
+    if (_userRegistry.containsKey(cleanEmail)) {
+      throw Exception("Account already exists with email '$cleanEmail'. Please Sign In.");
+    }
+
+    try {
+      if (_initialized) {
+        final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: cleanEmail,
+          password: password,
+        );
+        if (credential.user != null) {
+          await credential.user!.updateDisplayName(displayName);
+          _demoUser = null;
+          _authController.add(credential.user);
+          return credential.user;
+        }
+      }
+    } catch (e) {
+      debugPrint("FirebaseAuth SignUp Exception caught safely: $e");
+    }
+
+    // Register user in authentication registry
+    final newUid = 'dev-${DateTime.now().millisecondsSinceEpoch}';
+    _userRegistry[cleanEmail] = {
+      'password': password,
+      'name': displayName,
+      'role': role,
+      'uid': newUid,
+      'photo': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+    };
+
+    return signInDemoUser(
+      uid: newUid,
+      displayName: displayName,
+      email: cleanEmail,
+      photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+    );
+  }
+
+  static Future<User?> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    final cleanEmail = email.trim().toLowerCase();
+
+    try {
+      if (_initialized) {
+        final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: cleanEmail,
+          password: password,
+        );
+        if (credential.user != null) {
+          _demoUser = null;
+          _authController.add(credential.user);
+          return credential.user;
+        }
+      }
+    } catch (e) {
+      debugPrint("FirebaseAuth SignIn Exception caught safely: $e");
+    }
+
+    // Auth Verification against User Registry
+    if (!_userRegistry.containsKey(cleanEmail)) {
+      throw Exception("No account registered with '$cleanEmail'. Click 'Sign Up' tab to create an account.");
+    }
+
+    final record = _userRegistry[cleanEmail]!;
+    if (record['password'] != password) {
+      throw Exception("Incorrect password for '$cleanEmail'. Please check your password and try again.");
+    }
+
+    return signInDemoUser(
+      uid: record['uid']!,
+      displayName: record['name']!,
+      email: cleanEmail,
+      photoUrl: record['photo']!,
+    );
   }
 
   static Future<void> signOut() async {

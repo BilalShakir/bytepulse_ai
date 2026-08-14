@@ -55,12 +55,16 @@ class ArticleCard extends ConsumerWidget {
                     children: [
                       const Icon(Icons.auto_awesome, size: 12, color: AIGlowColors.electricCyan),
                       const SizedBox(width: 6),
-                      Text(
-                        card.transparencyReason,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AIGlowColors.electricCyan,
+                      Flexible(
+                        child: Text(
+                          card.transparencyReason,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AIGlowColors.electricCyan,
+                          ),
                         ),
                       ),
                     ],
@@ -72,8 +76,12 @@ class ArticleCard extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildCredibilityBadge(card.credibilityType, card.source),
+                    Flexible(
+                      child: _buildCredibilityBadge(card.credibilityType, card.source),
+                    ),
+                    const SizedBox(width: 8),
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(Icons.access_time, size: 12, color: AIGlowColors.mediumSlate),
                         const SizedBox(width: 4),
@@ -132,79 +140,84 @@ class ArticleCard extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // Feedback Group
-              Row(
-                children: [
-                  _buildFeedbackButton(
-                    context,
-                    ref,
-                    icon: Icons.thumb_up_alt_outlined,
-                    label: 'More',
-                    isActive: card.userFeedback == 'liked',
-                    activeColor: AIGlowColors.emeraldMint,
-                    onTap: () {
-                      ref.read(intelligenceCardsProvider.notifier).setFeedback(card.id, 'liked');
-                      _showSnackBar(context, 'Updated algorithm: More like this');
-                    },
+              Flexible(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildFeedbackButton(
+                        context,
+                        ref,
+                        icon: Icons.thumb_up_alt_outlined,
+                        label: 'More',
+                        isActive: card.userFeedback == 'liked',
+                        activeColor: AIGlowColors.emeraldMint,
+                        onTap: () {
+                          ref.read(intelligenceCardsProvider.notifier).setFeedback(card.id, 'liked');
+                          _showSnackBar(context, 'Updated algorithm: More like this');
+                        },
+                      ),
+                      const SizedBox(width: 4),
+                      _buildFeedbackButton(
+                        context,
+                        ref,
+                        icon: Icons.thumb_down_alt_outlined,
+                        label: 'Less',
+                        isActive: card.userFeedback == 'disliked',
+                        activeColor: AIGlowColors.roseCritical,
+                        onTap: () {
+                          ref.read(intelligenceCardsProvider.notifier).setFeedback(card.id, 'disliked');
+                          _showSnackBar(context, 'Updated algorithm: Less like this');
+                        },
+                      ),
+                      const SizedBox(width: 4),
+                      _buildFeedbackButton(
+                        context,
+                        ref,
+                        icon: Icons.visibility_off_outlined,
+                        label: 'Mute',
+                        isActive: false,
+                        onTap: () {
+                          ref.read(intelligenceCardsProvider.notifier).muteCard(card.id);
+                          _showSnackBar(context, 'Topic muted from feed');
+                        },
+                      ),
+                      const SizedBox(width: 4),
+                      _buildFeedbackButton(
+                        context,
+                        ref,
+                        icon: isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                        label: isBookmarked ? 'Saved' : '',
+                        isActive: isBookmarked,
+                        activeColor: AIGlowColors.electricCyan,
+                        onTap: () {
+                          final set = ref.read(bookmarksProvider);
+                          final newSet = Set<String>.from(set);
+                          if (isBookmarked) {
+                            newSet.remove(card.id);
+                            ref.read(savedLibraryProvider.notifier).removeItem(card.id);
+                            _showSnackBar(context, 'Removed from Bookmarks & Firestore');
+                          } else {
+                            newSet.add(card.id);
+                            ref.read(savedLibraryProvider.notifier).addItem(
+                                  SavedItem(
+                                    id: card.id,
+                                    type: 'article',
+                                    title: card.headline,
+                                    snippet: card.summary,
+                                    savedAt: 'Just now',
+                                    source: card.source,
+                                  ),
+                                  originalCard: card,
+                                );
+                            _showSnackBar(context, 'Saved to Bookmarks & Synced to Firestore');
+                          }
+                          ref.read(bookmarksProvider.notifier).state = newSet;
+                        },
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 4),
-                  _buildFeedbackButton(
-                    context,
-                    ref,
-                    icon: Icons.thumb_down_alt_outlined,
-                    label: 'Less',
-                    isActive: card.userFeedback == 'disliked',
-                    activeColor: AIGlowColors.roseCritical,
-                    onTap: () {
-                      ref.read(intelligenceCardsProvider.notifier).setFeedback(card.id, 'disliked');
-                      _showSnackBar(context, 'Updated algorithm: Less like this');
-                    },
-                  ),
-                  const SizedBox(width: 4),
-                  _buildFeedbackButton(
-                    context,
-                    ref,
-                    icon: Icons.visibility_off_outlined,
-                    label: 'Mute',
-                    isActive: false,
-                    onTap: () {
-                      ref.read(intelligenceCardsProvider.notifier).muteCard(card.id);
-                      _showSnackBar(context, 'Topic muted from feed');
-                    },
-                  ),
-                  const SizedBox(width: 4),
-                  _buildFeedbackButton(
-                    context,
-                    ref,
-                    icon: isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                    label: isBookmarked ? 'Saved' : '',
-                    isActive: isBookmarked,
-                    activeColor: AIGlowColors.electricCyan,
-                    onTap: () {
-                      final set = ref.read(bookmarksProvider);
-                      final newSet = Set<String>.from(set);
-                      if (isBookmarked) {
-                        newSet.remove(card.id);
-                        ref.read(savedLibraryProvider.notifier).removeItem(card.id);
-                        _showSnackBar(context, 'Removed from Bookmarks & Firestore');
-                      } else {
-                        newSet.add(card.id);
-                        ref.read(savedLibraryProvider.notifier).addItem(
-                              SavedItem(
-                                id: card.id,
-                                type: 'article',
-                                title: card.headline,
-                                snippet: card.summary,
-                                savedAt: 'Just now',
-                                source: card.source,
-                              ),
-                              originalCard: card,
-                            );
-                        _showSnackBar(context, 'Saved to Bookmarks & Synced to Firestore');
-                      }
-                      ref.read(bookmarksProvider.notifier).state = newSet;
-                    },
-                  ),
-                ],
+                ),
               ),
 
               // Iridescent "Ask Live Gemini" Trigger
@@ -290,9 +303,13 @@ class ArticleCard extends ConsumerWidget {
         children: [
           Icon(Icons.verified, size: 12, color: text),
           const SizedBox(width: 4),
-          Text(
-            source,
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: text),
+          Flexible(
+            child: Text(
+              source,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: text),
+            ),
           ),
         ],
       ),
