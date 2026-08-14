@@ -817,10 +817,10 @@ class ChatNotifier extends StateNotifier<List<ChatMessage>> {
           ChatMessage(
             id: 'msg-1',
             sender: 'assistant',
-            text: '### 👋 Welcome to Live Gemini Agent\n\nI am your **Gemini Enterprise Agent** in BytePulse AI. I deliver real-time technical analysis grounded in your developer feeds.\n\n• Ask about high-throughput GPU inference & FP8 quantization.\n• Synthesize system architecture trade-offs & security alerts.\n• Generate PyTorch / vLLM benchmark scripts.',
+            text: '### 👋 Welcome to Live Gemini Agent\n\nI am your **Gemini Intelligence Assistant** in BytePulse AI. Ask me about breaking AI models, cloud infrastructure news, hardware benchmarks, or search for any technology story.\n\n• "What are the latest developments in frontier LLMs?"\n• "Why does the Claude 3.7 hybrid reasoning update matter?"\n• "What is the community saying about DeepSeek-R1?"',
             confidence: '99.4%',
-            citations: ['Hacker News Thread', 'Google Cloud Release Notes'],
-            suggestedTopic: 'DeepSeek Distillation Architecture',
+            citations: ['BytePulse Index', 'Google AI Intelligence'],
+            suggestedTopic: null,
           ),
         ]);
 

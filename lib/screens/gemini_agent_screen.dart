@@ -242,7 +242,7 @@ class _GeminiAgentScreenState extends ConsumerState<GeminiAgentScreen> {
                       child: TextField(
                         controller: textController,
                         decoration: const InputDecoration(
-                          hintText: 'Ask Live Gemini anything...',
+                          hintText: 'Ask BytePulse AI anything...',
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.symmetric(horizontal: 8),
                         ),

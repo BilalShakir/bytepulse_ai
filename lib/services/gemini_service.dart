@@ -27,6 +27,8 @@ class GeminiService {
 
   GeminiService({this.apiKey, this.modelName});
 
+  static bool isTestMode = false;
+
   String get _effectiveApiKey {
     if (apiKey != null && apiKey!.isNotEmpty) return apiKey!;
     return const String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
@@ -52,6 +54,12 @@ class GeminiService {
     final key = _effectiveApiKey;
     final modelId = _normalizeModel(_effectiveModel);
     final String systemContext = _buildSystemContext(groundedCard, customContextTitle);
+
+    // Fast-path simulated response in automated test suites
+    if (isTestMode) {
+      yield* _streamSimulatedResponse(prompt, groundedCard, customContextTitle);
+      return;
+    }
 
     if (key.isNotEmpty) {
       // 1. Direct High-Speed REST SSE Stream with key parameter & 8s timeout
@@ -285,7 +293,68 @@ class GeminiService {
 
     final buffer = StringBuffer();
 
-    if (lower.contains('takeaway') || lower.contains('key takeaway') || lower.contains('summary') || lower == 'what is this?' || lower.contains('what is this')) {
+    // 1. Google Gemini Models (e.g. "lates gemnai llm?", "latest gemini", "gemini 2.0")
+    if (lower.contains('gemini') || lower.contains('gemnai') || lower.contains('google llm') || lower.contains('google ai')) {
+      buffer.writeln('### Google Gemini Frontier Models Overview\n');
+      buffer.writeln('Google\'s latest Gemini model family represents the state-of-the-art in multimodal reasoning, massive context windows, and real-time agentic tool execution:\n');
+      buffer.writeln('• **Gemini 2.0 Flash**: Google\'s newest flagship generation designed for the agentic era. Features ultra-low latency sub-second responses, native audio and video streaming input/output, and built-in tool invocation.\n');
+      buffer.writeln('• **Gemini 1.5 Pro**: Built for complex reasoning across massive multimodal inputs. Boasts a standard **2 Million token context window** capable of ingesting entire GitHub repositories, 1 hour of video, or 60,000 lines of code in a single prompt.\n');
+      buffer.writeln('• **Gemini 1.5 Flash & Flash-8B**: High-throughput, cost-efficient models optimized for high-volume enterprise tasks, summarization, and live developer chat.\n');
+      buffer.writeln('• **Key Innovations**: Native structured JSON outputs, zero-shot function calling, audio/vision multimodality without external OCR/ASR bridges, and deep integration across Google Cloud Vertex AI.');
+    }
+    // 2. Anthropic Claude (e.g. "claude 3.7", "claude 3.5")
+    else if (lower.contains('claude') || lower.contains('anthropic') || lower.contains('sonnet')) {
+      buffer.writeln('### Anthropic Claude Model Family Overview\n');
+      buffer.writeln('Anthropic\'s Claude models are widely regarded for superior coding performance, nuanced writing, and robust safety guardrails:\n');
+      buffer.writeln('• **Claude 3.7 Sonnet**: Introduces hybrid reasoning architecture, allowing users to toggle between instant responses and extended thinking mode for complex math, coding, and architecture tasks.\n');
+      buffer.writeln('• **Claude 3.5 Sonnet**: Industry benchmark leader for software engineering on SWE-bench, artifact generation, and computer use capability.\n');
+      buffer.writeln('• **Claude 3.5 Haiku**: Lightweight model delivering frontier-class speed and intelligence for agentic sub-loops at a fraction of the cost.');
+    }
+    // 3. OpenAI / ChatGPT (e.g. "openai", "gpt-4o", "o1", "o3", "sora")
+    else if (lower.contains('openai') || lower.contains('gpt-4o') || lower.contains('chatgpt') || lower.contains('sora') || lower.contains('o1') || lower.contains('o3')) {
+      buffer.writeln('### OpenAI Frontier AI Models Overview\n');
+      buffer.writeln('OpenAI\'s frontier portfolio spans conversational multimodal models, specialized reasoning engines, and generative video systems:\n');
+      buffer.writeln('• **GPT-4o & GPT-4o mini**: Flagship omni-modal model natively handling voice conversations, vision analysis, and text reasoning with low latency.\n');
+      buffer.writeln('• **o1 & o3-mini Reasoning Models**: Uses reinforcement learning with chain-of-thought search to solve difficult STEM, competitive coding, and algorithmic problems.\n');
+      buffer.writeln('• **Sora**: Generative video diffusion model producing high-definition video with realistic physics simulations and camera movement control.');
+    }
+    // 4. DeepSeek & Open Source Models (e.g. "deepseek", "llama")
+    else if (lower.contains('deepseek') || lower.contains('distill') || lower.contains('r1') || lower.contains('llama') || lower.contains('open weights')) {
+      buffer.writeln('### Open Weights & Reasoning AI Landscape\n');
+      buffer.writeln('The open-source AI ecosystem has accelerated dramatically with breakthrough reasoning models and distillation techniques:\n');
+      buffer.writeln('• **DeepSeek-R1**: Open-weights reasoning model that achieved parity with proprietary frontier models using Multi-head Latent Attention (MLA) and Mixture-of-Experts (MoE) architectures at vastly lower training costs.\n');
+      buffer.writeln('• **Distillation Breakthroughs**: Distilled 14B and 32B models run locally on consumer GPUs (e.g. RTX 4090) while retaining up to 94% of frontier reasoning capability.\n');
+      buffer.writeln('• **Meta LLaMA 3.3 70B**: Provides industry-standard open weights for enterprise self-hosting and private fine-tuning.');
+    }
+    // 5. Datacenter Hardware & GPUs (e.g. "nvidia", "blackwell", "b200", "h100")
+    else if (lower.contains('blackwell') || lower.contains('nvidia') || lower.contains('b200') || lower.contains('gpu') || lower.contains('h100') || lower.contains('nvlink')) {
+      buffer.writeln('### Datacenter GPU & AI Silicon Trends\n');
+      buffer.writeln('AI accelerator architecture is undergoing a major generational shift driven by high-density memory and thermal demands:\n');
+      buffer.writeln('• **NVIDIA Blackwell B200**: Delivers 1.8 PFLOPS FP8 compute with 192GB HBM3e memory and 1.8 TB/s NVLink 5 interconnects, requiring direct-to-chip liquid cooling for 1,000W+ TDPs.\n');
+      buffer.writeln('• **AMD Instinct MI325X**: Competes with 256GB HBM3e memory per socket to host larger LLMs per node.\n');
+      buffer.writeln('• **Hyperscaler ASICs**: Google TPU v6 Trillium and AWS Trainium2 provide cost-effective alternative infrastructure for large-scale training and inference.');
+    }
+    // 6. Cloud & Kubernetes
+    else if (lower.contains('k8s') || lower.contains('kubernetes') || lower.contains('ingress') || lower.contains('cloud') || lower.contains('terraform') || lower.contains('aws')) {
+      buffer.writeln('### Cloud Infrastructure & DevOps Trends\n');
+      buffer.writeln('Modern cloud engineering is focusing on developer velocity, security guardrails, and zero-downtime operations:\n');
+      buffer.writeln('• **Kubernetes Ecosystem**: Emphasis on automated ingress security mitigations, eBPF zero-code observability via OpenTelemetry, and ephemeral node autoscaling.\n');
+      buffer.writeln('• **Infrastructure as Code**: Parallel evaluation engines in Terraform AWS Provider v5.6 reducing CI/CD plan/apply times by up to 75%.\n');
+      buffer.writeln('• **Internal Developer Platforms**: Tools like Backstage and Port replacing ticket-based cloud provisioning with compliant self-service catalogs.');
+    }
+    // 7. Tech Media & App Info
+    else if (lower.contains('bytepulse') || lower.contains('what is this') && !lower.contains('article')) {
+      buffer.writeln('### Welcome to BytePulse AI\n');
+      buffer.writeln('**BytePulse AI** is a curated developer intelligence and tech journalism platform. It continuously ingests, filters, and analyzes breaking industry stories across:\n');
+      buffer.writeln('• 🤖 **AI & Frontier Models** (Gemini, Claude, DeepSeek, OpenAI, LLaMA)\n');
+      buffer.writeln('• ⚡ **Datacenter GPUs & Hardware** (NVIDIA Blackwell, AMD MI325X, Apple Silicon)\n');
+      buffer.writeln('• ☁️ **Cloud & Infrastructure** (Kubernetes, Terraform, Serverless, eBPF)\n');
+      buffer.writeln('• 🔒 **Cybersecurity & CVE Advisories** (Zero-day patches, supply chain security)\n');
+      buffer.writeln('• 💰 **Developer Tools & FinOps** (Inference cost optimization, WASM runtimes)\n');
+      buffer.writeln('Ask me anything about tech stories, industry trade-offs, or recent architecture benchmarks!');
+    }
+    // 8. Grounded Article Specific Question Handlers
+    else if (lower.contains('takeaway') || lower.contains('key takeaway') || lower.contains('summary')) {
       buffer.writeln('### Key Takeaways: $articleTitle\n');
       buffer.writeln('$summary\n');
       buffer.writeln('**Core Highlights:**');
@@ -313,37 +382,10 @@ class GeminiService {
       buffer.writeln('Think of this as a major upgrade for how tech teams build and scale their systems. The main benefit is **$pros**, while teams need to keep in mind **$cons**.');
     } else if (lower.contains('community') || lower.contains('people saying') || lower.contains('sentiment') || lower.contains('opinion')) {
       buffer.writeln('### Developer Community Sentiment\n');
-      buffer.writeln('Discussions across Hacker News, Reddit, and engineering forums highlight strong excitement for **$articleTitle**:\n');
+      buffer.writeln('Discussions across Hacker News, Reddit, and engineering forums highlight strong interest in **$articleTitle**:\n');
       buffer.writeln('• **Positive Reactions**: Developers praise the efficiency and open architecture ($pros).');
       buffer.writeln('• **Critical Discussion**: Discussion threads point out transition hurdles and operational costs ($cons).');
       buffer.writeln('\n*Source: $source*');
-    } else if (lower.contains('vllm') || lower.contains('patch') || lower.contains('compilation')) {
-      buffer.writeln('### Tech Media Analysis: vLLM Kernel Optimization\n');
-      buffer.writeln('Developer forums and release notes confirm that the latest **vLLM optimization patch** addresses memory bandwidth bottlenecks during dynamic speculative decoding in distilled models.\n');
-      buffer.writeln('**Key Takeaways:**');
-      buffer.writeln('• **Dynamic PagedAttention**: Optimizes non-contiguous memory access for single-GPU setups.');
-      buffer.writeln('• **Efficiency**: Allows developers to run distilled reasoning models on consumer GPUs without out-of-memory errors.');
-    } else if (lower.contains('liquid cooling') || lower.contains('blackwell') || lower.contains('b200') || lower.contains('nvlink')) {
-      buffer.writeln('### Datacenter Analysis: NVIDIA Blackwell B200 Architecture\n');
-      buffer.writeln('Hardware industry reports confirm that Blackwell B200 accelerators require direct-to-chip liquid cooling due to sustained **1,000W+ TDP** under heavy AI matrix workloads.\n');
-      buffer.writeln('**Key Highlights:**');
-      buffer.writeln('• **Throughput**: Delivers up to 2.8x speedup over H100 SXM5.');
-      buffer.writeln('• **Interconnect**: NVLink 5 enables 1.8 TB/s bidirectional bandwidth per GPU.');
-    } else if (lower.contains('k8s') || lower.contains('kubernetes') || lower.contains('ingress') || lower.contains('cve') || lower.contains('zero-day')) {
-      buffer.writeln('### Security Advisory Overview: Kubernetes Ingress\n');
-      buffer.writeln('The recent CNCF security bulletin details an important ingress vulnerability and outlines mitigation recommendations for cloud infrastructure teams.\n');
-      buffer.writeln('**Key Points:**');
-      buffer.writeln('• Upgrading to patched controller versions resolves header parsing issues.');
-      buffer.writeln('• Rolling cluster restarts ensure zero-downtime traffic continuity.');
-    } else if (lower.contains('finops') || lower.contains('billing') || lower.contains('cost') || lower.contains('spend')) {
-      buffer.writeln('### FinOps & Cloud Economics Overview\n');
-      buffer.writeln('Industry case studies demonstrate that dynamic queue batching and spot GPU fallback can reduce cloud AI inference expenditures by up to **62%**.\n');
-      buffer.writeln('**Key Practices:**');
-      buffer.writeln('• Stream real-time billing logs into BigQuery for per-token cost attribution.');
-      buffer.writeln('• Optimize queue scheduling to maintain high GPU utilization.');
-    } else if (lower.contains('terraform') || lower.contains('iac') || lower.contains('aws provider')) {
-      buffer.writeln('### Cloud Infrastructure Update: Terraform AWS Provider\n');
-      buffer.writeln('HashiCorp\'s latest AWS provider update features a parallel state evaluation engine that delivers up to **4x faster plan and apply** execution times for enterprise infrastructure.\n');
     } else if (lower == 'ok' || lower == 'okay' || lower == 'cool' || lower == 'nice' || lower == 'got it' || lower == 'sure') {
       buffer.writeln('Sounds good! Let me know if you want to explore any breaking stories, industry trade-offs, or tech trends.');
     } else if (lower == 'thanks' || lower == 'thank you' || lower == 'thx') {
@@ -370,7 +412,9 @@ class GeminiService {
 
     final chunks = buffer.toString().split('\n');
     for (final line in chunks) {
-      await Future.delayed(const Duration(milliseconds: 10));
+      if (!isTestMode) {
+        await Future.delayed(const Duration(milliseconds: 10));
+      }
       yield '$line\n';
     }
   }

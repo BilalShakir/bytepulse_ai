@@ -278,10 +278,10 @@ class ArticleDetailSheet extends ConsumerWidget {
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.auto_awesome, size: 18, color: Colors.white),
+                          Icon(Icons.smart_toy_rounded, size: 18, color: Colors.white),
                           SizedBox(width: 8),
                           Text(
-                            'Ask Live Gemini About This Article',
+                            'Ask BytePulse AI About This Article',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,

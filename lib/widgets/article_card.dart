@@ -236,10 +236,10 @@ class ArticleCard extends ConsumerWidget {
                   ),
                   child: const Row(
                     children: [
-                      Icon(Icons.auto_awesome, size: 14, color: Colors.white),
+                      Icon(Icons.smart_toy_rounded, size: 14, color: Colors.white),
                       SizedBox(width: 6),
                       Text(
-                        'Ask Live Gemini',
+                        'Ask BytePulse AI',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
