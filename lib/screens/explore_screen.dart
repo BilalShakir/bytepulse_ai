@@ -578,6 +578,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     final matchingArticles = channelArticles.isNotEmpty
         ? channelArticles
         : allCards.where((c) => c.headline.toLowerCase().contains(ch.tag.toLowerCase()) || c.summary.toLowerCase().contains(ch.tag.toLowerCase())).toList();
+    final displayArticles = matchingArticles.isNotEmpty ? matchingArticles : allCards;
 
     showModalBottomSheet(
       context: context,
@@ -623,7 +624,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
-                              '${matchingArticles.length} Intelligence Articles • Tap any card to open detail modal',
+                              '${displayArticles.length} Intelligence Articles • Tap any card to read details',
                               style: const TextStyle(fontSize: 11, color: AIGlowColors.mediumSlate),
                             ),
                           ],
@@ -637,18 +638,17 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                   ),
                   const Divider(color: AIGlowColors.softBorder),
                   Expanded(
-                    child: matchingArticles.isEmpty
-                        ? const Center(
-                            child: Text('No articles found in this channel yet.', style: TextStyle(color: AIGlowColors.mediumSlate)),
-                          )
-                        : ListView.builder(
-                            controller: controller,
-                            physics: const BouncingScrollPhysics(),
-                            itemCount: matchingArticles.length,
-                            itemBuilder: (context, index) {
-                              return ArticleCard(card: matchingArticles[index]);
-                            },
-                          ),
+                    child: ListView.builder(
+                      controller: controller,
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: displayArticles.length,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: ArticleCard(card: displayArticles[index]),
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -660,10 +660,17 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   }
 
   void _showTopicArticlesModal(BuildContext context, CustomTopic topic, List<IntelligenceCard> allCards) {
+    final queryWords = topic.name.toLowerCase().split(RegExp(r'\s+')).where((w) => w.length > 2).toList();
+    final topicKeywords = topic.keywords.map((k) => k.toLowerCase()).toList();
+
     final matchingArticles = allCards.where((c) {
-      final text = '${c.headline} ${c.summary} ${c.source}'.toLowerCase();
-      return topic.keywords.any((kw) => text.contains(kw.toLowerCase()));
+      final text = '${c.headline} ${c.summary} ${c.source} ${c.groundedContext} ${c.transparencyReason} ${c.channelId}'.toLowerCase();
+      final hasWordMatch = queryWords.any((w) => text.contains(w));
+      final hasKeywordMatch = topicKeywords.any((kw) => text.contains(kw));
+      return hasWordMatch || hasKeywordMatch;
     }).toList();
+
+    final displayArticles = matchingArticles.isNotEmpty ? matchingArticles : allCards;
 
     showModalBottomSheet(
       context: context,
@@ -709,7 +716,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
-                              '${matchingArticles.length} matching articles • Tap card to read intelligence',
+                              '${displayArticles.length} Intelligence Articles • Tap any card to read details',
                               style: const TextStyle(fontSize: 11, color: AIGlowColors.mediumSlate),
                             ),
                           ],
@@ -723,18 +730,17 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                   ),
                   const Divider(color: AIGlowColors.softBorder),
                   Expanded(
-                    child: matchingArticles.isEmpty
-                        ? const Center(
-                            child: Text('No articles matching this topic yet.', style: TextStyle(color: AIGlowColors.mediumSlate)),
-                          )
-                        : ListView.builder(
-                            controller: controller,
-                            physics: const BouncingScrollPhysics(),
-                            itemCount: matchingArticles.length,
-                            itemBuilder: (context, index) {
-                              return ArticleCard(card: matchingArticles[index]);
-                            },
-                          ),
+                    child: ListView.builder(
+                      controller: controller,
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: displayArticles.length,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: ArticleCard(card: displayArticles[index]),
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),

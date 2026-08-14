@@ -5,6 +5,7 @@ import '../providers/app_providers.dart';
 import '../models/app_models.dart';
 import '../services/firebase_service.dart';
 import '../services/firestore_service.dart';
+import '../widgets/article_card.dart';
 import '../widgets/article_detail_sheet.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -353,96 +354,128 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
 
     if (activeSubTab == 1) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AIGlowColors.cardWhite,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AIGlowColors.softBorder),
-        ),
+      final roleArticles = ref.watch(filteredCardsForRoleProvider);
+
+      return SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Select Primary Engineering Role Filter',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AIGlowColors.inkSlate),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Feed re-filters immediately in Riverpod and syncs selection to Firestore.',
-              style: TextStyle(fontSize: 11, color: AIGlowColors.mediumSlate),
-            ),
-            const SizedBox(height: 12),
-            Column(
-              children: _rolesMap.entries.map((entry) {
-                final isSelected = selectedRole == entry.key;
-                return GestureDetector(
-                  onTap: () {
-                    ref.read(selectedRoleProvider.notifier).state = entry.key;
-                    final user = FirebaseService.currentUser;
-                    if (user != null) {
-                      FirestoreService.syncPreferences(
-                        user.uid,
-                        selectedRole: entry.key,
-                        followedChannels: followedChannels,
-                        relevanceLevel: ref.read(relevanceLevelProvider),
-                        quietHours: ref.read(quietHoursProvider),
-                      );
-                    }
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Switched active role to "${entry.value}". Feed re-filtered!'),
-                        backgroundColor: AIGlowColors.electricCyan,
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AIGlowColors.electricCyan.withOpacity(0.1) : Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isSelected ? AIGlowColors.electricCyan : AIGlowColors.softBorder,
-                        width: isSelected ? 1.5 : 1.0,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          entry.value,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                            color: isSelected ? AIGlowColors.electricCyan : AIGlowColors.inkSlate,
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AIGlowColors.cardWhite,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AIGlowColors.softBorder),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Select Primary Engineering Role Filter',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AIGlowColors.inkSlate),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Feed re-filters immediately in Riverpod and syncs selection to Firestore.',
+                    style: TextStyle(fontSize: 11, color: AIGlowColors.mediumSlate),
+                  ),
+                  const SizedBox(height: 12),
+                  Column(
+                    children: _rolesMap.entries.map((entry) {
+                      final isSelected = selectedRole == entry.key;
+                      return GestureDetector(
+                        onTap: () {
+                          ref.read(selectedRoleProvider.notifier).state = entry.key;
+                          final user = FirebaseService.currentUser;
+                          if (user != null) {
+                            FirestoreService.syncPreferences(
+                              user.uid,
+                              selectedRole: entry.key,
+                              followedChannels: followedChannels,
+                              relevanceLevel: ref.read(relevanceLevelProvider),
+                              quietHours: ref.read(quietHoursProvider),
+                            );
+                          }
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Switched active role to "${entry.value}". Feed re-filtered!'),
+                              backgroundColor: AIGlowColors.electricCyan,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AIGlowColors.electricCyan.withOpacity(0.1) : Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isSelected ? AIGlowColors.electricCyan : AIGlowColors.softBorder,
+                              width: isSelected ? 1.5 : 1.0,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                entry.value,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                  color: isSelected ? AIGlowColors.electricCyan : AIGlowColors.inkSlate,
+                                ),
+                              ),
+                              if (isSelected)
+                                const Icon(Icons.check_circle, size: 16, color: AIGlowColors.electricCyan),
+                            ],
                           ),
                         ),
-                        if (isSelected)
-                          const Icon(Icons.check_circle, size: 16, color: AIGlowColors.electricCyan),
-                      ],
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: const Text('Re-Run Cold Start Setup'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AIGlowColors.electricCyan,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        ref.read(isOnboardingOpenProvider.notifier).state = true;
+                      },
                     ),
                   ),
-                );
-              }).toList(),
-            ),
-            const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('Re-Run Cold Start Setup'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AIGlowColors.electricCyan,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: () {
-                  ref.read(isOnboardingOpenProvider.notifier).state = true;
-                },
+                ],
               ),
             ),
+            const SizedBox(height: 16),
+
+            // Curated Intelligence Section for this Role
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Recommended for ${_rolesMap[selectedRole] ?? "You"}',
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AIGlowColors.inkSlate),
+                ),
+                Text(
+                  '${roleArticles.length} articles • Tap to read',
+                  style: const TextStyle(fontSize: 11, color: AIGlowColors.mediumSlate),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            ...roleArticles.map((card) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: ArticleCard(card: card),
+                )),
           ],
         ),
       );
