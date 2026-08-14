@@ -21,10 +21,12 @@ class _GeminiAgentScreenState extends ConsumerState<GeminiAgentScreen> {
   bool isRecording = false;
 
   final List<String> promptChips = [
-    'Why does this matter?',
-    'Show code example',
-    'What are the risks?',
-    'Synthesize architectural impact',
+    'What is the key takeaway?',
+    'Why does this story matter?',
+    'What are the pros and cons?',
+    'How does this impact the industry?',
+    'Explain in simple terms',
+    'What is the community saying?',
   ];
 
   void _scrollToBottom() {

@@ -252,18 +252,20 @@ class GeminiService {
 
   String _buildSystemContext(IntelligenceCard? card, String? contextTitle) {
     final buffer = StringBuffer();
-    buffer.writeln("You are a helpful senior technical AI assistant in BytePulse AI. Provide direct, natural, high-signal conversational answers with clean markdown formatting. If code is requested, provide standard markdown code blocks.");
+    buffer.writeln("You are BytePulse AI, an intelligent tech media analyst and developer journalism assistant. BytePulse AI is a curated tech media & developer intelligence platform (covering industry developments, architecture trade-offs, AI research, cloud infrastructure news, and market insights). Provide direct, clear, conversational tech media analysis in clean markdown. Summarize key takeaways, trade-offs, industry implications, and background context naturally without overly pedantic product guides or manual code snippets unless explicitly requested.");
 
     if (card != null) {
-      buffer.writeln('\n[GROUNDED CONTEXT]');
-      buffer.writeln('Article: ${card.headline}');
+      buffer.writeln('\n[GROUNDED STORY CONTEXT]');
+      buffer.writeln('Headline: ${card.headline}');
       buffer.writeln('Summary: ${card.summary}');
       buffer.writeln('Source: ${card.source}');
+      buffer.writeln('Pros / Advantages: ${card.pros}');
+      buffer.writeln('Cons / Challenges: ${card.cons}');
       if (card.takeaways.isNotEmpty) {
-        buffer.writeln('Takeaways: ${card.takeaways.join('; ')}');
+        buffer.writeln('Key Takeaways: ${card.takeaways.join('; ')}');
       }
     } else if (contextTitle != null && contextTitle.isNotEmpty) {
-      buffer.writeln('\n[GROUNDED CONTEXT]: $contextTitle');
+      buffer.writeln('\n[GROUNDED STORY CONTEXT]: $contextTitle');
     }
 
     return buffer.toString();
@@ -271,131 +273,96 @@ class GeminiService {
 
   Stream<String> _streamSimulatedResponse(String prompt, IntelligenceCard? card, String? contextTitle) async* {
     final lower = prompt.toLowerCase().trim();
-    final articleTitle = card?.headline ?? contextTitle ?? 'Engineering Intelligence';
-    final summary = card?.summary ?? 'Technical intelligence covering cloud architecture, LLM inference performance, and microservice benchmarks.';
-    final source = card?.source ?? 'Developer Engineering Blog';
-    final pros = card?.pros ?? 'High throughput & VRAM efficiency';
-    final cons = card?.cons ?? 'Requires kernel driver updates';
+    final articleTitle = card?.headline ?? contextTitle ?? 'Tech Intelligence Story';
+    final summary = card?.summary ?? 'Curated tech media intelligence covering frontier AI, cloud infrastructure, datacenter hardware, and developer ecosystem developments.';
+    final source = card?.source ?? 'Tech Media Dispatch';
+    final pros = card?.pros ?? 'High operational efficiency and performance gains';
+    final cons = card?.cons ?? 'Requires ecosystem adaptation and migration planning';
     final takeaways = card?.takeaways ?? [
-      'Production-tested baseline verified against senior engineering benchmarks.',
-      'Maintain automated health checks and isolated execution in containers.',
+      'Verified tech media baseline analyzed from senior engineering sources.',
+      'Significant implications for modern developer stacks and cloud architecture.',
     ];
 
     final buffer = StringBuffer();
 
-    if (lower.contains('vllm') || lower.contains('patch') || lower.contains('compilation')) {
-      buffer.writeln('### vLLM Kernel Optimization & Compilation Patch\n');
-      buffer.writeln('The custom **vLLM 0.6.2 compilation patch** resolves memory bandwidth saturation encountered during dynamic speculative decoding in distilled reasoning models.\n');
-      buffer.writeln('**Key Technical Points:**');
-      buffer.writeln('• **Custom PagedAttention Kernel**: Enables dynamic memory page dispatch for non-contiguous KV-cache pages during tensor-parallel inference.');
-      buffer.writeln('• **Fused RoPE Rotary Embeddings**: Replaces PyTorch dispatch loops with fused CUDA kernels to eliminate runtime overhead.');
-      buffer.writeln('• **VRAM Footprint**: Prevents out-of-memory exceptions on single 24GB GPUs (e.g. RTX 4090).\n');
-      buffer.writeln('*Context: $articleTitle ($summary)*');
-    } else if (lower.contains('liquid cooling') || lower.contains('blackwell') || lower.contains('b200') || lower.contains('nvlink')) {
-      buffer.writeln('### NVIDIA Blackwell B200 Architecture & Cooling\n');
-      buffer.writeln('Blackwell B200 accelerators require direct-to-chip liquid cooling due to sustained **1,000W to 1,200W TDP** under full FP8 matrix compute workloads.\n');
-      buffer.writeln('**Architectural Highlights:**');
-      buffer.writeln('• **NVLink 5**: 1.8 TB/s bidirectional interconnect bandwidth per GPU eliminates communication bottlenecks in 64-node clusters.');
-      buffer.writeln('• **FP8 Matrix Math**: Delivers sustained 1.8 PFLOPS throughput (2.8x speedup over H100 SXM5).');
-    } else if (lower.contains('k8s') || lower.contains('kubernetes') || lower.contains('ingress') || lower.contains('cve') || lower.contains('zero-day')) {
-      buffer.writeln('### Kubernetes Ingress Security & Mitigation\n');
-      buffer.writeln('The security advisory addresses remote privilege escalation in cloud-managed NGINX ingress controllers via crafted header payloads.\n');
-      buffer.writeln('**Mitigation Steps:**');
-      buffer.writeln('1. Upgrade Helm chart to controller version `>= 1.31.2`.');
-      buffer.writeln('2. Perform rolling pod rollout: `kubectl rollout restart deployment/ingress-nginx-controller`.');
-      buffer.writeln('3. Ensure pod disruption budgets maintain zero-downtime traffic continuity.');
-    } else if (lower.contains('finops') || lower.contains('billing') || lower.contains('cost') || lower.contains('spend')) {
-      buffer.writeln('### Cloud FinOps & AI Inference Cost Optimization\n');
-      buffer.writeln('Dynamic batching and spot GPU fallback reduce cloud inference expenditures by up to **62%** across multi-tenant clusters.\n');
-      buffer.writeln('**Key Practices:**');
-      buffer.writeln('• **Dynamic Batch Queueing**: Boosts GPU utilization from 34% to 88%.');
-      buffer.writeln('• **Real-Time Unit Economics**: Stream billing logs into BigQuery for per-token cost attribution.');
-    } else if (lower.contains('terraform') || lower.contains('iac') || lower.contains('aws provider')) {
-      buffer.writeln('### Terraform AWS Provider Parallel Engine\n');
-      buffer.writeln('The parallel state evaluation engine in AWS Provider v5.6 delivers **4x faster plan and apply** execution times for large infrastructure setups.\n');
-      buffer.writeln('**Key Improvements:**');
-      buffer.writeln('• Parallel resource graph traversal cuts CI/CD pipeline wait times.');
-      buffer.writeln('• Native AWS SDK v2 reduces API throttling retries.');
-    } else if (lower == 'ok' || lower == 'okay' || lower == 'cool' || lower == 'nice' || lower == 'got it' || lower == 'sure') {
-      buffer.writeln('Sounds good! Let me know if you need any architectural deep dives, code blueprints, or benchmarks for your services.');
-    } else if (lower == 'thanks' || lower == 'thank you' || lower == 'thx') {
-      buffer.writeln('You\'re welcome! Feel free to ask about any engineering topics or cloud infrastructure patterns.');
-    } else if (lower.contains('what\'s up') || lower.contains('whats up') || lower.contains('how are you')) {
-      buffer.writeln('All systems operational! I\'m ready to analyze technical releases, synthesize cloud trade-offs, or generate code blueprints for your stack.');
-    } else if (lower == 'hi' || lower == 'hello' || lower == 'hey' || lower.contains('hello!') || lower.contains('hi!')) {
-      buffer.writeln('Hello! I am BytePulse AI, your Live Developer Intelligence Agent.');
-      if (card != null) {
-        buffer.writeln('\nCurrently grounded in **$articleTitle**. Ask any technical question or follow-up regarding this topic.');
-      } else {
-        buffer.writeln('\nAsk me about cloud architecture, GPU benchmarks, Kubernetes security, FinOps unit economics, or code blueprints.');
-      }
-    } else if (lower.contains('what is this') || lower.contains('explain this') || lower.contains('summary') || lower == 'what is this?') {
-      buffer.writeln('### $articleTitle\n');
+    if (lower.contains('takeaway') || lower.contains('key takeaway') || lower.contains('summary') || lower == 'what is this?' || lower.contains('what is this')) {
+      buffer.writeln('### Key Takeaways: $articleTitle\n');
       buffer.writeln('$summary\n');
-      buffer.writeln('**Trade-offs:**');
-      buffer.writeln('• **Pros**: $pros');
-      buffer.writeln('• **Cons**: $cons');
-    } else if (lower.contains('why does this matter') || lower.contains('why') || lower.contains('matter') || lower.contains('impact')) {
-      buffer.writeln('### Impact Analysis: $articleTitle\n');
-      buffer.writeln('$summary\n');
-      buffer.writeln('• **Advantage**: $pros');
-      buffer.writeln('• **Operational Factor**: $cons');
-    } else if (lower.contains('risk') || lower.contains('security') || lower.contains('drawback')) {
-      buffer.writeln('### Risk & Operational Assessment: $articleTitle\n');
-      buffer.writeln('• **Primary Factor**: $cons');
-      buffer.writeln('• **Mitigation**: Verify driver and API compatibility before production rollout.');
-    } else if (lower.contains('code') || lower.contains('script') || lower.contains('example') || lower.contains('how')) {
-      final codeTopic = articleTitle.split(':').last.trim();
-      buffer.writeln('### ⚡ Implementation Blueprint: $codeTopic\n');
-      buffer.writeln('Here is a runnable benchmark snippet implementing this pattern:\n');
-      buffer.writeln('```python');
-      buffer.writeln('# Code Blueprint: $codeTopic');
-      buffer.writeln('# Source: $source');
-      buffer.writeln('import time');
-      buffer.writeln('import sys');
-      buffer.writeln('');
-      buffer.writeln('def execute_benchmark():');
-      buffer.writeln('    print("Initializing benchmark for: $codeTopic...")');
-      buffer.writeln('    start = time.perf_counter()');
-      buffer.writeln('    ');
-      buffer.writeln('    # Simulating core execution pipeline');
-      buffer.writeln('    time.sleep(0.04)');
-      buffer.writeln('    ');
-      buffer.writeln('    elapsed_ms = (time.perf_counter() - start) * 1000.0');
-      buffer.writeln('    print(f"Pipeline Latency: {elapsed_ms:.2f} ms")');
-      buffer.writeln('    return elapsed_ms');
-      buffer.writeln('');
-      buffer.writeln('if __name__ == "__main__":');
-      buffer.writeln('    execute_benchmark()');
-      buffer.writeln('```\n');
-      buffer.writeln('#### 💡 Execution Notes:');
-      buffer.writeln('• **$pros**');
-      buffer.writeln('• **$cons**');
-    } else if (lower.contains('synthesize') || lower.contains('architecture') || lower.contains('compare')) {
-      buffer.writeln('### 🏗️ Architectural Synthesis: $articleTitle\n');
-      buffer.writeln('#### 🔄 Architectural Overview:\n$summary\n');
-      buffer.writeln('#### 📊 Pros vs Cons Breakdown:');
-      buffer.writeln('• **Pros**: $pros');
-      buffer.writeln('• **Cons**: $cons\n');
-      buffer.writeln('#### 📌 Key Takeaways:');
+      buffer.writeln('**Core Highlights:**');
       for (final t in takeaways) {
         buffer.writeln('• $t');
       }
-    } else {
-      buffer.writeln('### 🧠 Technical Analysis\n');
-      buffer.writeln('Addressing query: "*$prompt*"\n');
+      buffer.writeln('\n*Reported by $source*');
+    } else if (lower.contains('matter') || lower.contains('why') || lower.contains('importance') || lower.contains('impact')) {
+      buffer.writeln('### Why This Story Matters: $articleTitle\n');
+      buffer.writeln('$summary\n');
+      buffer.writeln('**Industry Significance:**');
+      buffer.writeln('• **Ecosystem Shift**: This development shifts engineering economics and infrastructure baselines across the technology sector.');
+      buffer.writeln('• **Key Advantage**: $pros.');
+      buffer.writeln('• **Consideration**: $cons.');
+    } else if (lower.contains('pros') || lower.contains('cons') || lower.contains('trade') || lower.contains('advantage')) {
+      buffer.writeln('### Balanced Assessment & Trade-Offs\n');
+      buffer.writeln('**Story**: $articleTitle\n');
+      buffer.writeln('**The Upside:**');
+      buffer.writeln('• $pros');
+      buffer.writeln('\n**The Challenges & Risks:**');
+      buffer.writeln('• $cons');
+    } else if (lower.contains('simple') || lower.contains('explain') || lower.contains('in simple terms') || lower.contains('eli5')) {
+      buffer.writeln('### In Simple Terms: $articleTitle\n');
+      buffer.writeln('In short: $summary\n');
+      buffer.writeln('Think of this as a major upgrade for how tech teams build and scale their systems. The main benefit is **$pros**, while teams need to keep in mind **$cons**.');
+    } else if (lower.contains('community') || lower.contains('people saying') || lower.contains('sentiment') || lower.contains('opinion')) {
+      buffer.writeln('### Developer Community Sentiment\n');
+      buffer.writeln('Discussions across Hacker News, Reddit, and engineering forums highlight strong excitement for **$articleTitle**:\n');
+      buffer.writeln('• **Positive Reactions**: Developers praise the efficiency and open architecture ($pros).');
+      buffer.writeln('• **Critical Discussion**: Discussion threads point out transition hurdles and operational costs ($cons).');
+      buffer.writeln('\n*Source: $source*');
+    } else if (lower.contains('vllm') || lower.contains('patch') || lower.contains('compilation')) {
+      buffer.writeln('### Tech Media Analysis: vLLM Kernel Optimization\n');
+      buffer.writeln('Developer forums and release notes confirm that the latest **vLLM optimization patch** addresses memory bandwidth bottlenecks during dynamic speculative decoding in distilled models.\n');
+      buffer.writeln('**Key Takeaways:**');
+      buffer.writeln('• **Dynamic PagedAttention**: Optimizes non-contiguous memory access for single-GPU setups.');
+      buffer.writeln('• **Efficiency**: Allows developers to run distilled reasoning models on consumer GPUs without out-of-memory errors.');
+    } else if (lower.contains('liquid cooling') || lower.contains('blackwell') || lower.contains('b200') || lower.contains('nvlink')) {
+      buffer.writeln('### Datacenter Analysis: NVIDIA Blackwell B200 Architecture\n');
+      buffer.writeln('Hardware industry reports confirm that Blackwell B200 accelerators require direct-to-chip liquid cooling due to sustained **1,000W+ TDP** under heavy AI matrix workloads.\n');
+      buffer.writeln('**Key Highlights:**');
+      buffer.writeln('• **Throughput**: Delivers up to 2.8x speedup over H100 SXM5.');
+      buffer.writeln('• **Interconnect**: NVLink 5 enables 1.8 TB/s bidirectional bandwidth per GPU.');
+    } else if (lower.contains('k8s') || lower.contains('kubernetes') || lower.contains('ingress') || lower.contains('cve') || lower.contains('zero-day')) {
+      buffer.writeln('### Security Advisory Overview: Kubernetes Ingress\n');
+      buffer.writeln('The recent CNCF security bulletin details an important ingress vulnerability and outlines mitigation recommendations for cloud infrastructure teams.\n');
+      buffer.writeln('**Key Points:**');
+      buffer.writeln('• Upgrading to patched controller versions resolves header parsing issues.');
+      buffer.writeln('• Rolling cluster restarts ensure zero-downtime traffic continuity.');
+    } else if (lower.contains('finops') || lower.contains('billing') || lower.contains('cost') || lower.contains('spend')) {
+      buffer.writeln('### FinOps & Cloud Economics Overview\n');
+      buffer.writeln('Industry case studies demonstrate that dynamic queue batching and spot GPU fallback can reduce cloud AI inference expenditures by up to **62%**.\n');
+      buffer.writeln('**Key Practices:**');
+      buffer.writeln('• Stream real-time billing logs into BigQuery for per-token cost attribution.');
+      buffer.writeln('• Optimize queue scheduling to maintain high GPU utilization.');
+    } else if (lower.contains('terraform') || lower.contains('iac') || lower.contains('aws provider')) {
+      buffer.writeln('### Cloud Infrastructure Update: Terraform AWS Provider\n');
+      buffer.writeln('HashiCorp\'s latest AWS provider update features a parallel state evaluation engine that delivers up to **4x faster plan and apply** execution times for enterprise infrastructure.\n');
+    } else if (lower == 'ok' || lower == 'okay' || lower == 'cool' || lower == 'nice' || lower == 'got it' || lower == 'sure') {
+      buffer.writeln('Sounds good! Let me know if you want to explore any breaking stories, industry trade-offs, or tech trends.');
+    } else if (lower == 'thanks' || lower == 'thank you' || lower == 'thx') {
+      buffer.writeln('You\'re welcome! Feel free to ask about any tech story or industry insight.');
+    } else if (lower == 'hi' || lower == 'hello' || lower == 'hey' || lower.contains('hello!') || lower.contains('hi!')) {
+      buffer.writeln('Hello! I am BytePulse AI, your live tech media intelligence assistant.');
       if (card != null) {
-        buffer.writeln('#### 🔍 Grounded Findings (via $source):\n');
-        buffer.writeln('• **Direct Answer**: Regarding "*$prompt*", analysis indicates that integration with **${card.headline}** enables optimized throughput with ${card.pros.toLowerCase()}.');
-        buffer.writeln('• **Context Summary**: $summary');
-        buffer.writeln('• **Key Trade-Off**: $pros | $cons\n');
+        buffer.writeln('\nCurrently reading: **$articleTitle**. Ask me about its key takeaways, trade-offs, or industry impact!');
       } else {
-        buffer.writeln('#### 🔍 Findings & Context:\n');
-        buffer.writeln('• **Summary**: $summary\n');
-        buffer.writeln('• **Key Advantage**: $pros\n');
-        buffer.writeln('• **Key Consideration**: $cons\n');
+        buffer.writeln('\nAsk me about breaking AI developments, cloud infrastructure trends, GPU benchmarks, or security advisories.');
       }
-      buffer.writeln('#### 📌 Recommended Next Steps:');
+    } else {
+      buffer.writeln('### Tech Intelligence Analysis\n');
+      buffer.writeln('Regarding **"$prompt"**:\n');
+      buffer.writeln('$summary\n');
+      buffer.writeln('**Key Insights:**');
+      buffer.writeln('• **Advantage**: $pros');
+      buffer.writeln('• **Consideration**: $cons');
+      buffer.writeln('\n**Takeaways:**');
       for (final t in takeaways) {
         buffer.writeln('• $t');
       }
