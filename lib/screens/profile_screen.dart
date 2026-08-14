@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/ai_glow_theme.dart';
 import '../providers/app_providers.dart';
+import '../models/app_models.dart';
 import '../services/firebase_service.dart';
 import '../services/firestore_service.dart';
+import '../widgets/article_detail_sheet.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -260,62 +262,90 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           child: Text('No saved items in your library.', style: TextStyle(color: AIGlowColors.mediumSlate)),
         );
       }
+      final allCards = ref.watch(intelligenceCardsProvider);
       return ListView.builder(
         physics: const BouncingScrollPhysics(),
         itemCount: savedItems.length,
         itemBuilder: (context, index) {
           final item = savedItems[index];
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AIGlowColors.cardWhite,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AIGlowColors.softBorder),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color.fromRGBO(139, 92, 246, 0.04),
-                  blurRadius: 10,
-                  offset: Offset(0, 2),
-                ),
+          final matchingCard = allCards.firstWhere(
+            (c) => c.headline.toLowerCase().contains(item.title.toLowerCase()) ||
+                   c.summary.toLowerCase().contains(item.snippet.toLowerCase()),
+            orElse: () => IntelligenceCard(
+              id: item.id,
+              headline: item.title,
+              summary: item.snippet,
+              credibilityType: CredibilityType.verified,
+              source: item.source,
+              readTime: '3 min read',
+              transparencyReason: 'Saved in Developer Library',
+              pros: 'Verified code blueprint and implementation notes',
+              cons: 'Ensure environment runtime dependencies are configured',
+              channelId: 'ai_tools',
+              groundedContext: item.title,
+              url: 'https://news.ycombinator.com',
+              takeaways: [
+                item.snippet,
+                'Saved directly to developer local & Firestore library.',
               ],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.cloud_done_outlined, size: 12, color: AIGlowColors.emeraldMint),
-                        SizedBox(width: 4),
-                        Text(
-                          'Firestore Synced',
-                          style: TextStyle(fontSize: 10, color: AIGlowColors.emeraldMint, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, size: 16, color: AIGlowColors.mediumSlate),
-                      onPressed: () {
-                        ref.read(savedLibraryProvider.notifier).removeItem(item.id);
-                      },
-                    ),
-                  ],
-                ),
-                Text(
-                  item.title,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AIGlowColors.inkSlate),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  item.snippet,
-                  style: const TextStyle(fontSize: 11, color: AIGlowColors.mediumSlate),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+          );
+
+          return InkWell(
+            onTap: () => ArticleDetailSheet.show(context, matchingCard),
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AIGlowColors.cardWhite,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AIGlowColors.softBorder),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color.fromRGBO(139, 92, 246, 0.04),
+                    blurRadius: 10,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.cloud_done_outlined, size: 12, color: AIGlowColors.emeraldMint),
+                          SizedBox(width: 4),
+                          Text(
+                            'Firestore Synced • Tap to read',
+                            style: TextStyle(fontSize: 10, color: AIGlowColors.emeraldMint, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, size: 16, color: AIGlowColors.mediumSlate),
+                        onPressed: () {
+                          ref.read(savedLibraryProvider.notifier).removeItem(item.id);
+                        },
+                      ),
+                    ],
+                  ),
+                  Text(
+                    item.title,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AIGlowColors.inkSlate),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.snippet,
+                    style: const TextStyle(fontSize: 11, color: AIGlowColors.mediumSlate),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           );
         },

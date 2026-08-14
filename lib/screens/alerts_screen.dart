@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/ai_glow_theme.dart';
 import '../providers/app_providers.dart';
-import '../services/fcm_service.dart';
 import '../models/app_models.dart';
+import '../widgets/article_detail_sheet.dart';
 
 class AlertsScreen extends ConsumerStatefulWidget {
   const AlertsScreen({super.key});
@@ -47,6 +47,7 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
   Widget build(BuildContext context) {
     final relevance = ref.watch(relevanceLevelProvider);
     final quietHours = ref.watch(quietHoursProvider);
+    final allCards = ref.watch(intelligenceCardsProvider);
 
     List<AlertItem> filteredAlerts = alerts;
     if (relevance == 1.0) {
@@ -64,254 +65,219 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 12),
-              const Text(
-                'Alerts & Relevance Engine',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AIGlowColors.inkSlate,
-                ),
-              ),
-              const Text(
-                'Configure live push threshold & stream delivered notifications.',
-                style: TextStyle(fontSize: 12, color: AIGlowColors.mediumSlate),
-              ),
-              const SizedBox(height: 16),
-
-              // Relevance Slider Card
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AIGlowColors.cardWhite,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AIGlowColors.softBorder),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color.fromRGBO(139, 92, 246, 0.08),
-                      blurRadius: 20,
-                      offset: Offset(0, 4),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Alerts & Relevance Engine',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: AIGlowColors.inkSlate,
                     ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  ),
+                  const Text(
+                    'Configure live push threshold & tap alerts to read intelligence.',
+                    style: TextStyle(fontSize: 12, color: AIGlowColors.mediumSlate),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Relevance Slider Card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AIGlowColors.cardWhite,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AIGlowColors.softBorder),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color.fromRGBO(139, 92, 246, 0.08),
+                          blurRadius: 20,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Row(
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Icon(Icons.bolt, color: AIGlowColors.electricCyan, size: 18),
-                            SizedBox(width: 6),
-                            Text(
-                              'Relevance Filter Engine',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: AIGlowColors.electricCyan,
+                            const Row(
+                              children: [
+                                Icon(Icons.bolt, color: AIGlowColors.electricCyan, size: 18),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Relevance Filter Engine',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: AIGlowColors.electricCyan,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AIGlowColors.emeraldMint.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text(
+                                'LIVE ACTIVE',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: AIGlowColors.emeraldMint,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AIGlowColors.emeraldMint.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Text(
-                            'LIVE ACTIVE',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: AIGlowColors.emeraldMint,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
+                        const SizedBox(height: 12),
 
-                    // Slider
-                    Slider(
-                      value: relevance,
-                      min: 1.0,
-                      max: 3.0,
-                      divisions: 2,
-                      activeColor: AIGlowColors.electricCyan,
-                      inactiveColor: AIGlowColors.softBorder,
-                      onChanged: (val) {
-                        ref.read(relevanceLevelProvider.notifier).state = val;
-                      },
-                    ),
+                        // Slider
+                        Slider(
+                          value: relevance,
+                          min: 1.0,
+                          max: 3.0,
+                          divisions: 2,
+                          activeColor: AIGlowColors.electricCyan,
+                          inactiveColor: AIGlowColors.softBorder,
+                          onChanged: (val) {
+                            ref.read(relevanceLevelProvider.notifier).state = val;
+                          },
+                        ),
 
-                    // Slider Labels Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '1. Only Critical',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: relevance == 1.0 ? FontWeight.bold : FontWeight.normal,
-                            color: relevance == 1.0 ? AIGlowColors.electricCyan : AIGlowColors.mediumSlate,
-                          ),
-                        ),
-                        Text(
-                          '2. Balanced',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: relevance == 2.0 ? FontWeight.bold : FontWeight.normal,
-                            color: relevance == 2.0 ? AIGlowColors.electricCyan : AIGlowColors.mediumSlate,
-                          ),
-                        ),
-                        Text(
-                          '3. Everything I Follow',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: relevance == 3.0 ? FontWeight.bold : FontWeight.normal,
-                            color: relevance == 3.0 ? AIGlowColors.electricCyan : AIGlowColors.mediumSlate,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.notifications_active, size: 16, color: AIGlowColors.hyperViolet),
-                        label: const Text(
-                          'Simulate FCM Test Push Notification (Deep-Link to Gemini)',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AIGlowColors.hyperViolet),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AIGlowColors.hyperViolet),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        onPressed: () {
-                          FcmService.simulateTestPushNotification(ref);
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Description text
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AIGlowColors.iceWhite,
-                        borderRadius: BorderRadius.circular(8),
-                        border: const Border(left: BorderSide(color: AIGlowColors.electricCyan, width: 3)),
-                      ),
-                      child: Text(
-                        _getRelevanceDesc(relevance),
-                        style: const TextStyle(fontSize: 11, color: AIGlowColors.inkSlate),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Expandable Quiet Hours Drawer
-              Container(
-                decoration: BoxDecoration(
-                  color: AIGlowColors.cardWhite,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AIGlowColors.softBorder),
-                ),
-                child: Column(
-                  children: [
-                    ListTile(
-                      leading: const Icon(Icons.nightlight_round, color: AIGlowColors.inkSlate, size: 20),
-                      title: const Text(
-                        'Quiet Hours & Push Controls',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AIGlowColors.inkSlate),
-                      ),
-                      trailing: Icon(
-                        isDrawerOpen ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                        color: AIGlowColors.mediumSlate,
-                      ),
-                      onTap: () => setState(() => isDrawerOpen = !isDrawerOpen),
-                    ),
-                    if (isDrawerOpen) ...[
-                      const Divider(height: 1, color: AIGlowColors.softBorder),
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
+                        // Labels
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'Quiet Hours (10 PM - 7 AM)',
-                                  style: TextStyle(fontSize: 12, color: AIGlowColors.mediumSlate),
-                                ),
-                                Switch(
-                                  value: quietHours,
-                                  activeColor: AIGlowColors.emeraldMint,
-                                  onChanged: (val) {
-                                    ref.read(quietHoursProvider.notifier).state = val;
-                                  },
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                _buildFreqButton('instant', 'Instant'),
-                                _buildFreqButton('hourly', 'Hourly Digest'),
-                                _buildFreqButton('daily', 'Daily Summary'),
-                              ],
-                            ),
+                            Text('Only Critical (CVEs)', style: TextStyle(fontSize: 10, color: AIGlowColors.mediumSlate)),
+                            Text('Balanced (Rec)', style: TextStyle(fontSize: 10, color: AIGlowColors.electricCyan, fontWeight: FontWeight.bold)),
+                            Text('Everything', style: TextStyle(fontSize: 10, color: AIGlowColors.mediumSlate)),
                           ],
                         ),
+                        const SizedBox(height: 8),
+
+                        Text(
+                          _getRelevanceDesc(relevance),
+                          style: const TextStyle(fontSize: 11, color: AIGlowColors.mediumSlate, fontStyle: FontStyle.italic),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Notification Delivery Preferences (Expandable)
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AIGlowColors.cardWhite,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AIGlowColors.softBorder),
+                    ),
+                    child: Column(
+                      children: [
+                        InkWell(
+                          onTap: () => setState(() => isDrawerOpen = !isDrawerOpen),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Row(
+                                  children: [
+                                    Icon(Icons.tune, color: AIGlowColors.inkSlate, size: 16),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Delivery Preferences & Quiet Hours',
+                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AIGlowColors.inkSlate),
+                                    ),
+                                  ],
+                                ),
+                                Icon(
+                                  isDrawerOpen ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                  color: AIGlowColors.mediumSlate,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (isDrawerOpen) ...[
+                          const Divider(height: 1, color: AIGlowColors.softBorder),
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'Quiet Hours (10 PM - 7 AM)',
+                                      style: TextStyle(fontSize: 12, color: AIGlowColors.mediumSlate),
+                                    ),
+                                    Switch(
+                                      value: quietHours,
+                                      activeColor: AIGlowColors.emeraldMint,
+                                      onChanged: (val) {
+                                        ref.read(quietHoursProvider.notifier).state = val;
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  children: [
+                                    _buildFreqButton('instant', 'Instant'),
+                                    _buildFreqButton('hourly', 'Hourly Digest'),
+                                    _buildFreqButton('daily', 'Daily Summary'),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Delivered Alerts Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Delivered Push Notifications',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AIGlowColors.inkSlate),
+                      ),
+                      Text(
+                        '${filteredAlerts.length} items • Tap to read details',
+                        style: const TextStyle(fontSize: 11, color: AIGlowColors.mediumSlate),
                       ),
                     ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Delivered Alerts Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Delivered Push Notifications',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AIGlowColors.inkSlate),
                   ),
-                  Text(
-                    '${filteredAlerts.length} items',
-                    style: const TextStyle(fontSize: 11, color: AIGlowColors.mediumSlate),
+                  const SizedBox(height: 8),
+
+                  // Alerts History List
+                  Expanded(
+                    child: ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: filteredAlerts.length,
+                      itemBuilder: (context, index) {
+                        final item = filteredAlerts[index];
+                        return _buildAlertCard(item, allCards);
+                      },
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-
-              // Alerts History List
-              Expanded(
-                child: ListView.builder(
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: filteredAlerts.length,
-                  itemBuilder: (context, index) {
-                    final item = filteredAlerts[index];
-                    return _buildAlertCard(item);
-                  },
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
-    ),
-  ),
-);
-}
+    );
+  }
 
   String _getRelevanceDesc(double level) {
     if (level == 1.0) {
@@ -341,7 +307,7 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
     );
   }
 
-  Widget _buildAlertCard(AlertItem item) {
+  Widget _buildAlertCard(AlertItem item, List<IntelligenceCard> allCards) {
     Color sideColor;
     if (item.severity == 'critical') {
       sideColor = AIGlowColors.roseCritical;
@@ -351,64 +317,103 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
       sideColor = AIGlowColors.electricCyan;
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AIGlowColors.cardWhite,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AIGlowColors.softBorder),
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromRGBO(139, 92, 246, 0.04),
-            blurRadius: 10,
-            offset: Offset(0, 2),
-          ),
+    final matchingCard = allCards.firstWhere(
+      (c) => c.headline.toLowerCase().contains(item.title.split(':').last.trim().toLowerCase()) ||
+             c.summary.toLowerCase().contains(item.title.split(':').last.trim().toLowerCase()),
+      orElse: () => IntelligenceCard(
+        id: item.id,
+        headline: item.title,
+        summary: item.body,
+        credibilityType: item.severity == 'critical' ? CredibilityType.official : CredibilityType.verified,
+        source: item.source,
+        readTime: '2 min read',
+        transparencyReason: 'Delivered via Push Relevance Engine',
+        pros: 'Immediate operational awareness & mitigation baseline',
+        cons: 'Requires production health verification',
+        channelId: 'cloud_infra',
+        groundedContext: item.title,
+        url: 'https://news.ycombinator.com',
+        takeaways: [
+          item.body,
+          'Verified via BytePulse Automated Relevance Dispatch.',
+          'Review configuration before pushing emergency rollout.',
         ],
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 4,
-            height: 48,
-            decoration: BoxDecoration(
-              color: sideColor,
-              borderRadius: BorderRadius.circular(2),
+    );
+
+    return InkWell(
+      onTap: () => ArticleDetailSheet.show(context, matchingCard),
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AIGlowColors.cardWhite,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AIGlowColors.softBorder),
+          boxShadow: const [
+            BoxShadow(
+              color: Color.fromRGBO(139, 92, 246, 0.04),
+              blurRadius: 10,
+              offset: Offset(0, 2),
             ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      item.source,
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AIGlowColors.mediumSlate),
-                    ),
-                    Text(
-                      item.time,
-                      style: const TextStyle(fontSize: 10, color: AIGlowColors.mediumSlate),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  item.title,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AIGlowColors.inkSlate),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  item.body,
-                  style: const TextStyle(fontSize: 11, color: AIGlowColors.mediumSlate),
-                ),
-              ],
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 4,
+              height: 48,
+              decoration: BoxDecoration(
+                color: sideColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        item.source,
+                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AIGlowColors.mediumSlate),
+                      ),
+                      Text(
+                        item.time,
+                        style: const TextStyle(fontSize: 10, color: AIGlowColors.mediumSlate),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.title,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AIGlowColors.inkSlate),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.body,
+                    style: const TextStyle(fontSize: 11, color: AIGlowColors.mediumSlate),
+                  ),
+                  const SizedBox(height: 6),
+                  const Row(
+                    children: [
+                      Icon(Icons.menu_book, size: 12, color: AIGlowColors.electricCyan),
+                      SizedBox(width: 4),
+                      Text(
+                        'Tap to read full intelligence & ask Gemini',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AIGlowColors.electricCyan),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

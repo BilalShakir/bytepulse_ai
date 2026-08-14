@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/ai_glow_theme.dart';
 import '../providers/app_providers.dart';
 import '../models/app_models.dart';
+import '../widgets/article_detail_sheet.dart';
 
 class GeminiAgentScreen extends ConsumerStatefulWidget {
   const GeminiAgentScreen({super.key});
@@ -77,24 +78,31 @@ class _GeminiAgentScreenState extends ConsumerState<GeminiAgentScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: Row(
-                          children: [
-                            const Icon(Icons.auto_awesome, size: 16, color: AIGlowColors.electricCyan),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                groundedCard != null
-                                    ? 'Grounded in: ${groundedCard.headline}'
-                                    : 'Grounded in: $groundedContext',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: AIGlowColors.electricCyan,
+                        child: InkWell(
+                          onTap: () {
+                            if (groundedCard != null) {
+                              ArticleDetailSheet.show(context, groundedCard);
+                            }
+                          },
+                          child: Row(
+                            children: [
+                              const Icon(Icons.auto_awesome, size: 16, color: AIGlowColors.electricCyan),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  groundedCard != null
+                                      ? 'Grounded in: ${groundedCard.headline}'
+                                      : 'Grounded in: $groundedContext',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: AIGlowColors.electricCyan,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                       GestureDetector(
