@@ -100,19 +100,24 @@ class MainNavigationShell extends ConsumerWidget {
           bottomNavigationBar: BottomAppBar(
             shape: const CircularNotchedRectangle(),
             notchMargin: 8.0,
-            color: Colors.white.withOpacity(0.92),
+            color: Colors.white,
             elevation: 10,
-            child: SizedBox(
-              height: 60,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildNavItem(context, ref, index: 0, icon: Icons.home_outlined, activeIcon: Icons.home, label: 'Home'),
-                  _buildNavItem(context, ref, index: 1, icon: Icons.explore_outlined, activeIcon: Icons.explore, label: 'Explore'),
-                  const SizedBox(width: 48), // Gap for center FAB
-                  _buildNavItem(context, ref, index: 3, icon: Icons.notifications_outlined, activeIcon: Icons.notifications, label: 'Alerts'),
-                  _buildNavItem(context, ref, index: 4, icon: Icons.person_outline, activeIcon: Icons.person, label: 'Profile'),
-                ],
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: SizedBox(
+                  height: 60,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildNavItem(context, ref, index: 0, icon: Icons.home_outlined, activeIcon: Icons.home, label: 'Home'),
+                      _buildNavItem(context, ref, index: 1, icon: Icons.explore_outlined, activeIcon: Icons.explore, label: 'Explore'),
+                      const SizedBox(width: 48), // Gap for center FAB
+                      _buildNavItem(context, ref, index: 3, icon: Icons.notifications_outlined, activeIcon: Icons.notifications, label: 'Alerts'),
+                      _buildNavItem(context, ref, index: 4, icon: Icons.person_outline, activeIcon: Icons.person, label: 'Profile'),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),

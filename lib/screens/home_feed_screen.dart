@@ -4,6 +4,7 @@ import '../theme/ai_glow_theme.dart';
 import '../providers/app_providers.dart';
 import '../widgets/article_card.dart';
 import '../models/app_models.dart';
+import '../services/firebase_service.dart';
 
 class HomeFeedScreen extends ConsumerStatefulWidget {
   const HomeFeedScreen({super.key});
@@ -37,6 +38,13 @@ class _HomeFeedScreenState extends ConsumerState<HomeFeedScreen> {
     final firestoreStream = ref.watch(liveFirestoreStreamProvider);
     final bookmarks = ref.watch(bookmarksProvider);
     final isRefreshing = ref.watch(isRefreshingFeedProvider);
+    final authState = ref.watch(authUserProvider);
+    final demoUser = ref.watch(demoUserProvider);
+    final userProfile = ref.watch(userProfileProvider);
+
+    final user = authState.value ?? FirebaseService.currentUser;
+    final String displayName = userProfile?.displayName ?? demoUser?.displayName ?? user?.displayName ?? 'Developer';
+    final String photoUrl = userProfile?.photoUrl ?? demoUser?.photoUrl ?? user?.photoURL ?? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80';
 
     // Merge live Firestore stream articles with role cards without duplicates
     final List<IntelligenceCard> cloudArticles = firestoreStream.value ?? [];
@@ -63,66 +71,70 @@ class _HomeFeedScreenState extends ConsumerState<HomeFeedScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: [
-              const SizedBox(height: 12),
-
-              // Top Header Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
                 children: [
-                  // User Avatar & Dynamic Role Title
-                  Expanded(
-                    child: Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: AIGlowColors.electricCyan, width: 2),
-                            ),
-                            child: Image.network(
-                              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Icon(Icons.person, color: AIGlowColors.electricCyan, size: 20);
-                              },
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Welcome back, Alex',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: AIGlowColors.inkSlate,
+                  const SizedBox(height: 12),
+
+                  // Top Header Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // User Avatar & Dynamic Role Title
+                      Expanded(
+                        child: Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: AIGlowColors.electricCyan, width: 2),
+                                ),
+                                child: Image.network(
+                                  photoUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(Icons.person, color: AIGlowColors.electricCyan, size: 20);
+                                  },
                                 ),
                               ),
-                              Text(
-                                _getRoleTitle(activeRole),
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: AIGlowColors.electricCyan,
-                                ),
-                                overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Welcome back, $displayName',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: AIGlowColors.inkSlate,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    _getRoleTitle(activeRole),
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: AIGlowColors.electricCyan,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
 
                   // Actions: Refresh Feed, Search Toggle & Bookmarks
                   Row(
@@ -261,7 +273,9 @@ class _HomeFeedScreenState extends ConsumerState<HomeFeedScreen> {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildEmptyState() {

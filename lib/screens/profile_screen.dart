@@ -26,23 +26,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authUserProvider);
     final demoUser = ref.watch(demoUserProvider);
+    final userProfile = ref.watch(userProfileProvider);
     final fallbackSignedIn = ref.watch(googleAuthSignedInProvider);
     final savedItems = ref.watch(savedLibraryProvider);
     final followedChannels = ref.watch(followedChannelsProvider);
     final selectedRole = ref.watch(selectedRoleProvider);
 
     final user = authState.value ?? FirebaseService.currentUser;
-    final bool isSignedIn = user != null || fallbackSignedIn || demoUser != null;
-    final String displayName = demoUser?.displayName ?? user?.displayName ?? 'Test Developer';
-    final String email = demoUser?.email ?? user?.email ?? 'dev@bytepulse.ai';
-    final String photoUrl = demoUser?.photoUrl ?? user?.photoURL ?? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80';
+    final bool isSignedIn = user != null || fallbackSignedIn || demoUser != null || userProfile != null;
+    final String displayName = userProfile?.displayName ?? demoUser?.displayName ?? user?.displayName ?? 'Test Developer';
+    final String email = userProfile?.email ?? demoUser?.email ?? user?.email ?? 'dev@bytepulse.ai';
+    final String photoUrl = userProfile?.photoUrl ?? demoUser?.photoUrl ?? user?.photoURL ?? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80';
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 12),
@@ -219,8 +223,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 
   Widget _buildSegmentBtn(int index, String label) {
     final isSelected = activeSubTab == index;
@@ -682,8 +688,8 @@ class _AuthWorkflowFormState extends State<AuthWorkflowForm> {
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
               validator: (val) {
-                if (_isSignUp && (val == null || val.trim().length < 2)) {
-                  return 'Please enter your full name (min 2 characters)';
+                if (_isSignUp && (val == null || val.trim().isEmpty)) {
+                  return 'Full name is required';
                 }
                 return null;
               },
@@ -706,7 +712,7 @@ class _AuthWorkflowFormState extends State<AuthWorkflowForm> {
               if (val == null || val.trim().isEmpty) {
                 return 'Email address is required';
               }
-              final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+              final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
               if (!emailRegex.hasMatch(val.trim())) {
                 return 'Please enter a valid email address';
               }
@@ -735,9 +741,6 @@ class _AuthWorkflowFormState extends State<AuthWorkflowForm> {
               }
               if (val.length < 6) {
                 return 'Password must be at least 6 characters';
-              }
-              if (_isSignUp && !RegExp(r'[0-9]').hasMatch(val)) {
-                return 'Password must contain at least one number';
               }
               return null;
             },

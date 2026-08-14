@@ -23,8 +23,24 @@ class DemoUser {
   });
 }
 
-final googleAuthSignedInProvider = StateProvider<bool>((ref) => false);
+class UserProfile {
+  final String uid;
+  final String displayName;
+  final String email;
+  final String role;
+  final String photoUrl;
 
+  UserProfile({
+    required this.uid,
+    required this.displayName,
+    required this.email,
+    required this.role,
+    required this.photoUrl,
+  });
+}
+
+final userProfileProvider = StateProvider<UserProfile?>((ref) => null);
+final googleAuthSignedInProvider = StateProvider<bool>((ref) => false);
 final demoUserProvider = StateProvider<DemoUser?>((ref) => null);
 
 // Navigation tab index (0: Home, 1: Explore, 2: Gemini, 3: Alerts, 4: Profile)
@@ -336,7 +352,16 @@ final filteredCardsForRoleProvider = Provider<List<IntelligenceCard>>((ref) {
   final role = ref.watch(selectedRoleProvider);
   final cards = ref.watch(intelligenceCardsProvider);
 
-  return cards.where((card) {
+  String roleLabel = 'AI / ML Engineer';
+  if (role == 'devops') {
+    roleLabel = 'DevOps & Cloud Engineer';
+  } else if (role == 'finops') {
+    roleLabel = 'FinOps Consultant';
+  } else if (role == 'arch' || role == 'architect') {
+    roleLabel = 'Software Systems Architect';
+  }
+
+  final filtered = cards.where((card) {
     if (role == 'devops') {
       return card.channelId == 'cloud_infra' ||
           card.headline.toLowerCase().contains('kubernetes') ||
@@ -349,7 +374,7 @@ final filteredCardsForRoleProvider = Provider<List<IntelligenceCard>>((ref) {
           card.headline.toLowerCase().contains('billing') ||
           card.summary.toLowerCase().contains('spend');
     }
-    if (role == 'arch') {
+    if (role == 'arch' || role == 'architect') {
       return card.channelId == 'dev_tools' ||
           card.headline.toLowerCase().contains('architecture') ||
           card.headline.toLowerCase().contains('microservices') ||
@@ -363,6 +388,12 @@ final filteredCardsForRoleProvider = Provider<List<IntelligenceCard>>((ref) {
         card.headline.toLowerCase().contains('gemini') ||
         card.headline.toLowerCase().contains('nvidia') ||
         card.headline.toLowerCase().contains('model');
+  }).toList();
+
+  return filtered.map((card) {
+    return card.copyWith(
+      transparencyReason: '✨ Because your active role is $roleLabel',
+    );
   }).toList();
 });
 
