@@ -27,77 +27,20 @@ class ArticleDetailSheet extends ConsumerWidget {
 
   Future<void> _launchSourceUrl(BuildContext context, String rawUrl) async {
     try {
-      String targetUrl = rawUrl.trim();
-
-      // Determine default parent feed URL based on source domain
-      String parentFeedUrl = 'https://news.ycombinator.com';
-      if (targetUrl.contains('cloud.google.com')) {
-        parentFeedUrl = 'https://cloud.google.com/blog';
-      } else if (targetUrl.contains('aws.amazon.com')) {
-        parentFeedUrl = 'https://aws.amazon.com/blogs/aws';
-      } else if (targetUrl.contains('github.blog')) {
-        parentFeedUrl = 'https://github.blog';
-      } else if (targetUrl.contains('ycombinator.com')) {
-        parentFeedUrl = 'https://news.ycombinator.com';
-      }
-
-      // Check if URL is invalid, an XML/feed endpoint, or mock format
-      bool isMockOrInvalid = targetUrl.isEmpty ||
-          !targetUrl.startsWith('http') ||
-          targetUrl.endsWith('.xml') ||
-          targetUrl.contains('/feed') ||
-          targetUrl.contains('/rss') ||
-          targetUrl.contains('mock');
-
-      if (isMockOrInvalid) {
-        targetUrl = parentFeedUrl;
-      }
-
+      final targetUrl = rawUrl.trim().isNotEmpty ? rawUrl.trim() : 'https://news.ycombinator.com';
       final Uri uri = Uri.parse(targetUrl);
-      if (await canLaunchUrl(uri)) {
-        final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-        if (launched) return;
-      }
+      await launchUrl(uri, mode: LaunchMode.platformDefault);
     } catch (e) {
-      debugPrint("Error launching URL: $e");
+      debugPrint("Error launching source URL: $e");
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not open external link: $rawUrl'),
+            backgroundColor: AIGlowColors.roseCritical,
+          ),
+        );
+      }
     }
-
-    if (!context.mounted) return;
-
-    // Display friendly alert dialog if URL is invalid or unavailable
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.info_outline, color: AIGlowColors.electricCyan),
-            SizedBox(width: 8),
-            Text('Source Notice', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: const Text(
-          'Original source link unavailable in preview mode',
-          style: TextStyle(fontSize: 13, color: AIGlowColors.inkSlate),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              final parentUri = Uri.parse('https://news.ycombinator.com');
-              if (await canLaunchUrl(parentUri)) {
-                await launchUrl(parentUri, mode: LaunchMode.externalApplication);
-              }
-            },
-            child: const Text('Open Parent Feed', style: TextStyle(color: AIGlowColors.electricCyan, fontWeight: FontWeight.bold)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close', style: TextStyle(color: AIGlowColors.mediumSlate)),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -160,7 +103,9 @@ class ArticleDetailSheet extends ConsumerWidget {
                   // Credibility & Source Badge Row
                   Row(
                     children: [
-                      _buildCredibilityBadge(card.credibilityType, card.source),
+                      Flexible(
+                        child: _buildCredibilityBadge(card.credibilityType, card.source),
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         '• ${card.readTime}',
@@ -397,9 +342,13 @@ class ArticleDetailSheet extends ConsumerWidget {
         children: [
           Icon(Icons.verified, size: 12, color: text),
           const SizedBox(width: 4),
-          Text(
-            source,
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: text),
+          Flexible(
+            child: Text(
+              source,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: text),
+            ),
           ),
         ],
       ),

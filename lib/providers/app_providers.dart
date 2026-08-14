@@ -428,18 +428,29 @@ class ChatNotifier extends StateNotifier<List<ChatMessage>> {
 
     final assistantMsgId = 'msg-${DateTime.now().millisecondsSinceEpoch + 1}';
 
-    String derivedTopic;
-    final lower = promptText.toLowerCase();
-    if (lower.contains('deepseek') || lower.contains('reasoning')) {
+    String? derivedTopic;
+    final lower = promptText.toLowerCase().trim();
+    final conversationalWords = {'ok', 'okay', 'hello', 'hi', 'hey', 'thanks', 'thank you', 'thx', 'yes', 'no', 'cool', 'nice', 'sure', 'what\'s up', 'whats up', 'how are you', 'great'};
+    final isConversational = conversationalWords.contains(lower) || (lower.length <= 3 && !lower.contains('k8s') && !lower.contains('gpu'));
+
+    if (lower.contains('kubernetes') || lower.contains('k8s') || lower.contains('ingress')) {
+      derivedTopic = 'Kubernetes Ingress';
+    } else if (lower.contains('deepseek') || lower.contains('reasoning')) {
       derivedTopic = 'DeepSeek Distillation Architecture';
+    } else if (lower.contains('terraform') || lower.contains('iac')) {
+      derivedTopic = 'Terraform AWS Provider';
+    } else if (lower.contains('finops') || lower.contains('billing')) {
+      derivedTopic = 'Cloud FinOps Strategy';
     } else if (lower.contains('code') || lower.contains('rust') || lower.contains('wasm')) {
       derivedTopic = 'Rust WASM Micro-Runtimes';
     } else if (lower.contains('gpu') || lower.contains('nvidia') || lower.contains('blackwell')) {
       derivedTopic = 'NVIDIA Blackwell & NVLink 5';
     } else if (lower.contains('vllm')) {
       derivedTopic = 'vLLM Performance';
-    } else {
+    } else if (!isConversational && promptText.trim().length > 3) {
       derivedTopic = promptText.length > 28 ? '${promptText.substring(0, 25)}...' : promptText;
+    } else {
+      derivedTopic = null;
     }
 
     var assistantMsg = ChatMessage(

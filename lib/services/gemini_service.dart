@@ -323,6 +323,12 @@ class GeminiService {
       buffer.writeln('3. Verify pod disruption budgets ensure zero downtime during rollouts.');
       buffer.writeln('\n#### 📖 Background Context ($source):');
       buffer.writeln('• $summary');
+    } else if (lower == 'ok' || lower == 'okay' || lower == 'cool' || lower == 'nice' || lower == 'got it' || lower == 'sure') {
+      buffer.writeln('Sounds good! Let me know if you need any architectural deep dives, code blueprints, or benchmarks for your services.');
+    } else if (lower == 'thanks' || lower == 'thank you' || lower == 'thx') {
+      buffer.writeln('You\'re welcome! Feel free to ask about any article in your feed, GPU benchmarks, or cloud infrastructure topics.');
+    } else if (lower.contains('what\'s up') || lower.contains('whats up') || lower.contains('how are you')) {
+      buffer.writeln('All systems operational! I\'m ready to analyze technical releases, synthesize cloud trade-offs, or generate code blueprints for your stack.');
     } else if (lower == 'hi' || lower == 'hello' || lower == 'hey' || lower.contains('hello!') || lower.contains('hi!')) {
       buffer.writeln('Hello! I am BytePulse AI, your Live Developer Intelligence Agent.');
       if (card != null) {

@@ -29,113 +29,107 @@ class ArticleCard extends ConsumerWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Tappable Card Body (Opens Article Detail Sheet)
-          InkWell(
-            onTap: () {
-              ArticleDetailSheet.show(context, card);
-            },
-            borderRadius: BorderRadius.circular(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Transparency Tag
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AIGlowColors.electricCyan.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AIGlowColors.electricCyan.withOpacity(0.25)),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          ArticleDetailSheet.show(context, card);
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Transparency Tag
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AIGlowColors.electricCyan.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AIGlowColors.electricCyan.withOpacity(0.25)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.auto_awesome, size: 12, color: AIGlowColors.electricCyan),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        card.transparencyReason,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AIGlowColors.electricCyan,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // Meta Row: Credibility Badge & Read Time
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: _buildCredibilityBadge(card.credibilityType, card.source),
                   ),
-                  child: Row(
+                  const SizedBox(width: 8),
+                  Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.auto_awesome, size: 12, color: AIGlowColors.electricCyan),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          card.transparencyReason,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AIGlowColors.electricCyan,
-                          ),
-                        ),
+                      const Icon(Icons.access_time, size: 12, color: AIGlowColors.mediumSlate),
+                      const SizedBox(width: 4),
+                      Text(
+                        card.readTime,
+                        style: const TextStyle(fontSize: 11, color: AIGlowColors.mediumSlate),
                       ),
                     ],
                   ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // Headline
+              Text(
+                card.headline,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AIGlowColors.inkSlate,
+                  height: 1.3,
                 ),
-                const SizedBox(height: 10),
+              ),
+              const SizedBox(height: 6),
 
-                // Meta Row: Credibility Badge & Read Time
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Flexible(
-                      child: _buildCredibilityBadge(card.credibilityType, card.source),
-                    ),
-                    const SizedBox(width: 8),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.access_time, size: 12, color: AIGlowColors.mediumSlate),
-                        const SizedBox(width: 4),
-                        Text(
-                          card.readTime,
-                          style: const TextStyle(fontSize: 11, color: AIGlowColors.mediumSlate),
-                        ),
-                      ],
-                    ),
-                  ],
+              // Summary
+              Text(
+                card.summary,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AIGlowColors.mediumSlate,
+                  height: 1.4,
                 ),
-                const SizedBox(height: 10),
+              ),
+              const SizedBox(height: 12),
 
-                // Headline
-                Text(
-                  card.headline,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AIGlowColors.inkSlate,
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 6),
+              // Sentiment Pills
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  _buildSentimentPill(card.pros, true),
+                  _buildSentimentPill(card.cons, false),
+                ],
+              ),
+              const SizedBox(height: 12),
 
-                // Summary
-                Text(
-                  card.summary,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AIGlowColors.mediumSlate,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 12),
+              const Divider(color: AIGlowColors.softBorder, height: 1),
+              const SizedBox(height: 10),
 
-                // Sentiment Pills
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: [
-                    _buildSentimentPill(card.pros, true),
-                    _buildSentimentPill(card.cons, false),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          const Divider(color: AIGlowColors.softBorder, height: 1),
-          const SizedBox(height: 10),
-
-          // Bottom Toolbar: Feedback + Ask Live Gemini
+              // Bottom Toolbar: Feedback + Ask Live Gemini
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -260,7 +254,9 @@ class ArticleCard extends ConsumerWidget {
           ),
         ],
       ),
-    );
+    ),
+  ),
+);
   }
 
   Widget _buildCredibilityBadge(CredibilityType type, String source) {

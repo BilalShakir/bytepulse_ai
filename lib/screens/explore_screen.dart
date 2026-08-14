@@ -39,7 +39,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
       followers: '115k',
       tag: 'Cloud',
       isFollowed: true,
-      trending: 'Kubernetes 1.31 Auto-Scaling Optimizations',
+      trending: 'Kubernetes 1.31 & Terraform AWS Provider Engine',
     ),
     Channel(
       id: 'cybersec',
@@ -221,18 +221,21 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildCategoryChip('ALL', 'All'),
-                        _buildCategoryChip('AI', 'AI & Agents'),
-                        _buildCategoryChip('Hardware', 'GPUs & HW'),
-                        _buildCategoryChip('Cloud', 'Cloud'),
-                        _buildCategoryChip('Security', 'Security'),
-                      ],
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildCategoryChip('ALL', 'All'),
+                          _buildCategoryChip('AI', 'AI & Agents'),
+                          _buildCategoryChip('Hardware', 'GPUs & HW'),
+                          _buildCategoryChip('Cloud', 'Cloud'),
+                          _buildCategoryChip('Security', 'Security'),
+                        ],
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 8),
 
                   // Grid/List toggle
                   Container(
