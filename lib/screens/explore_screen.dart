@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/ai_glow_theme.dart';
 import '../providers/app_providers.dart';
 import '../models/app_models.dart';
+import '../widgets/article_card.dart';
 
 class ExploreScreen extends ConsumerStatefulWidget {
   const ExploreScreen({super.key});
@@ -15,6 +16,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   bool isGrid = true;
   String activeCategory = 'ALL';
   String searchQuery = '';
+  String viewMode = 'channels'; // 'channels' or 'articles'
 
   final List<Channel> channels = [
     Channel(
@@ -62,12 +64,29 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   @override
   Widget build(BuildContext context) {
     final followedChannels = ref.watch(followedChannelsProvider);
+    final allCards = ref.watch(intelligenceCardsProvider);
 
-    final filtered = channels.where((ch) {
+    final filteredChannels = channels.where((ch) {
       if (activeCategory != 'ALL' && ch.tag != activeCategory) return false;
       if (searchQuery.isNotEmpty) {
         final q = searchQuery.toLowerCase();
         return ch.name.toLowerCase().contains(q) || ch.trending.toLowerCase().contains(q);
+      }
+      return true;
+    }).toList();
+
+    final filteredArticles = allCards.where((card) {
+      if (activeCategory != 'ALL') {
+        if (activeCategory == 'AI' && card.channelId != 'ai_tools') return false;
+        if (activeCategory == 'Hardware' && card.channelId != 'gpus_hw') return false;
+        if (activeCategory == 'Cloud' && card.channelId != 'cloud_infra') return false;
+        if (activeCategory == 'Security' && card.channelId != 'cybersec') return false;
+      }
+      if (searchQuery.isNotEmpty) {
+        final q = searchQuery.toLowerCase();
+        return card.headline.toLowerCase().contains(q) ||
+            card.summary.toLowerCase().contains(q) ||
+            card.source.toLowerCase().contains(q);
       }
       return true;
     }).toList();
@@ -84,17 +103,94 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 12),
-              const Text(
-                'Explore Channels Hub',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AIGlowColors.inkSlate,
-                ),
-              ),
-              const Text(
-                'Follow intelligence vectors & stream breaking updates.',
-                style: TextStyle(fontSize: 12, color: AIGlowColors.mediumSlate),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Explore Hub',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AIGlowColors.inkSlate,
+                          ),
+                        ),
+                        Text(
+                          'Browse channels, click articles & follow topics.',
+                          style: TextStyle(fontSize: 11, color: AIGlowColors.mediumSlate),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // View Switcher Pill
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AIGlowColors.softBorder),
+                    ),
+                    child: Row(
+                      children: [
+                        InkWell(
+                          onTap: () => setState(() => viewMode = 'channels'),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: viewMode == 'channels' ? AIGlowColors.electricCyan : Colors.transparent,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.hub, size: 13, color: viewMode == 'channels' ? Colors.white : AIGlowColors.mediumSlate),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Channels',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: viewMode == 'channels' ? Colors.white : AIGlowColors.mediumSlate,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () => setState(() => viewMode = 'articles'),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: viewMode == 'articles' ? AIGlowColors.electricCyan : Colors.transparent,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.article, size: 13, color: viewMode == 'articles' ? Colors.white : AIGlowColors.mediumSlate),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Articles (${filteredArticles.length})',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: viewMode == 'articles' ? Colors.white : AIGlowColors.mediumSlate,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
 
@@ -172,21 +268,25 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                             spacing: 6,
                             runSpacing: 6,
                             children: customTopics.map((topic) {
-                              return Chip(
-                                avatar: const Icon(Icons.star_rate, size: 12, color: AIGlowColors.hyperViolet),
-                                label: Text(
-                                  topic.name,
-                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AIGlowColors.inkSlate),
+                              return InkWell(
+                                onTap: () => _showTopicArticlesModal(context, topic, allCards),
+                                borderRadius: BorderRadius.circular(20),
+                                child: Chip(
+                                  avatar: const Icon(Icons.star_rate, size: 12, color: AIGlowColors.hyperViolet),
+                                  label: Text(
+                                    topic.name,
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AIGlowColors.inkSlate),
+                                  ),
+                                  deleteIcon: const Icon(Icons.close, size: 12, color: AIGlowColors.mediumSlate),
+                                  onDeleted: () {
+                                    ref.read(customTopicsProvider.notifier).removeTopic(topic.id);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Removed "${topic.name}" from Custom Feeds')),
+                                    );
+                                  },
+                                  backgroundColor: Colors.white,
+                                  side: const BorderSide(color: AIGlowColors.softBorder),
                                 ),
-                                deleteIcon: const Icon(Icons.close, size: 12, color: AIGlowColors.mediumSlate),
-                                onDeleted: () {
-                                  ref.read(customTopicsProvider.notifier).removeTopic(topic.id);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Removed "${topic.name}" from Custom Feeds')),
-                                  );
-                                },
-                                backgroundColor: Colors.white,
-                                side: const BorderSide(color: AIGlowColors.softBorder),
                               );
                             }).toList(),
                           ),
@@ -237,63 +337,78 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                   ),
                   const SizedBox(width: 8),
 
-                  // Grid/List toggle
-                  Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AIGlowColors.softBorder),
+                  if (viewMode == 'channels')
+                    Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AIGlowColors.softBorder),
+                      ),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            constraints: const BoxConstraints(),
+                            padding: const EdgeInsets.all(4),
+                            icon: Icon(Icons.grid_view,
+                                size: 18, color: isGrid ? AIGlowColors.electricCyan : AIGlowColors.mediumSlate),
+                            onPressed: () => setState(() => isGrid = true),
+                          ),
+                          IconButton(
+                            constraints: const BoxConstraints(),
+                            padding: const EdgeInsets.all(4),
+                            icon: Icon(Icons.list,
+                                size: 18, color: !isGrid ? AIGlowColors.electricCyan : AIGlowColors.mediumSlate),
+                            onPressed: () => setState(() => isGrid = false),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          constraints: const BoxConstraints(),
-                          padding: const EdgeInsets.all(4),
-                          icon: Icon(Icons.grid_view,
-                              size: 18, color: isGrid ? AIGlowColors.electricCyan : AIGlowColors.mediumSlate),
-                          onPressed: () => setState(() => isGrid = true),
-                        ),
-                        IconButton(
-                          constraints: const BoxConstraints(),
-                          padding: const EdgeInsets.all(4),
-                          icon: Icon(Icons.list,
-                              size: 18, color: !isGrid ? AIGlowColors.electricCyan : AIGlowColors.mediumSlate),
-                          onPressed: () => setState(() => isGrid = false),
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(height: 12),
 
-              // Channels Grid/List View
+              // Channels OR Articles View
               Expanded(
-                child: isGrid
-                    ? GridView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 0.82,
-                        ),
-                        itemCount: filtered.length,
-                        itemBuilder: (context, index) {
-                          return _buildChannelCard(filtered[index], followedChannels);
-                        },
-                      )
-                    : ListView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        itemCount: filtered.length,
-                        itemBuilder: (context, index) {
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            child: _buildChannelCard(filtered[index], followedChannels),
-                          );
-                        },
-                      ),
+                child: viewMode == 'channels'
+                    ? (isGrid
+                        ? GridView.builder(
+                            physics: const BouncingScrollPhysics(),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 0.78,
+                            ),
+                            itemCount: filteredChannels.length,
+                            itemBuilder: (context, index) {
+                              return _buildChannelCard(filteredChannels[index], followedChannels, allCards);
+                            },
+                          )
+                        : ListView.builder(
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: filteredChannels.length,
+                            itemBuilder: (context, index) {
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                child: _buildChannelCard(filteredChannels[index], followedChannels, allCards),
+                              );
+                            },
+                          ))
+                    : (filteredArticles.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'No matching intelligence articles found.',
+                              style: TextStyle(color: AIGlowColors.mediumSlate),
+                            ),
+                          )
+                        : ListView.builder(
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: filteredArticles.length,
+                            itemBuilder: (context, index) {
+                              return ArticleCard(card: filteredArticles[index]);
+                            },
+                          )),
               ),
             ],
           ),
@@ -328,128 +443,305 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     );
   }
 
-  Widget _buildChannelCard(Channel ch, Set<String> followedSet) {
+  Widget _buildChannelCard(Channel ch, Set<String> followedSet, List<IntelligenceCard> allCards) {
     final isFollowing = followedSet.contains(ch.id);
+    final channelCards = allCards.where((c) => c.channelId == ch.id).toList();
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AIGlowColors.cardWhite,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AIGlowColors.softBorder),
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromRGBO(139, 92, 246, 0.05),
-            blurRadius: 15,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: AIGlowColors.electricCyan.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: Text(
-                    ch.name[0],
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AIGlowColors.electricCyan,
-                    ),
-                  ),
-                ),
-              ),
-              InkWell(
-                onTap: () {
-                  final set = Set<String>.from(followedSet);
-                  if (isFollowing) {
-                    set.remove(ch.id);
-                  } else {
-                    set.add(ch.id);
-                  }
-                  ref.read(followedChannelsProvider.notifier).state = set;
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isFollowing
-                        ? AIGlowColors.emeraldMint.withOpacity(0.12)
-                        : AIGlowColors.electricCyan.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isFollowing ? AIGlowColors.emeraldMint : AIGlowColors.electricCyan,
-                    ),
-                  ),
-                  child: Text(
-                    isFollowing ? '✓ Following' : '+ Follow',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: isFollowing ? AIGlowColors.emeraldMint : AIGlowColors.electricCyan,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-
-          Text(
-            ch.name,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: AIGlowColors.inkSlate,
+    return InkWell(
+      onTap: () => _showChannelArticlesModal(context, ch, allCards),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AIGlowColors.cardWhite,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AIGlowColors.softBorder),
+          boxShadow: const [
+            BoxShadow(
+              color: Color.fromRGBO(139, 92, 246, 0.05),
+              blurRadius: 15,
+              offset: Offset(0, 4),
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            '${ch.followers} Subscribers • ${ch.tag}',
-            style: const TextStyle(fontSize: 10, color: AIGlowColors.mediumSlate),
-          ),
-          const SizedBox(height: 6),
-
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: AIGlowColors.iceWhite,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: AIGlowColors.softBorder),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  '🔥 TOP TRENDING',
-                  style: TextStyle(
-                    fontSize: 8,
-                    fontWeight: FontWeight.bold,
-                    color: AIGlowColors.amberWarning,
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: AIGlowColors.electricCyan.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Text(
+                      ch.name[0],
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AIGlowColors.electricCyan,
+                      ),
+                    ),
                   ),
                 ),
-                Text(
-                  ch.trending,
-                  style: const TextStyle(fontSize: 10, color: AIGlowColors.mediumSlate),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                InkWell(
+                  onTap: () {
+                    final set = Set<String>.from(followedSet);
+                    if (isFollowing) {
+                      set.remove(ch.id);
+                    } else {
+                      set.add(ch.id);
+                    }
+                    ref.read(followedChannelsProvider.notifier).state = set;
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isFollowing
+                          ? AIGlowColors.emeraldMint.withOpacity(0.12)
+                          : AIGlowColors.electricCyan.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isFollowing ? AIGlowColors.emeraldMint : AIGlowColors.electricCyan,
+                      ),
+                    ),
+                    child: Text(
+                      isFollowing ? '✓ Following' : '+ Follow',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: isFollowing ? AIGlowColors.emeraldMint : AIGlowColors.electricCyan,
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 6),
+
+            Text(
+              ch.name,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: AIGlowColors.inkSlate,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              '${ch.followers} Subscribers • ${channelCards.length} articles',
+              style: const TextStyle(fontSize: 10, color: AIGlowColors.mediumSlate),
+            ),
+            const SizedBox(height: 6),
+
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AIGlowColors.iceWhite,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: AIGlowColors.softBorder),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '🔥 TOP TRENDING',
+                    style: TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                      color: AIGlowColors.amberWarning,
+                    ),
+                  ),
+                  Text(
+                    ch.trending,
+                    style: const TextStyle(fontSize: 10, color: AIGlowColors.mediumSlate),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  void _showChannelArticlesModal(BuildContext context, Channel ch, List<IntelligenceCard> allCards) {
+    final channelArticles = allCards.where((c) => c.channelId == ch.id).toList();
+    final matchingArticles = channelArticles.isNotEmpty
+        ? channelArticles
+        : allCards.where((c) => c.headline.toLowerCase().contains(ch.tag.toLowerCase()) || c.summary.toLowerCase().contains(ch.tag.toLowerCase())).toList();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.85,
+          maxChildSize: 0.95,
+          minChildSize: 0.5,
+          builder: (_, controller) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: AIGlowColors.cardWhite,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AIGlowColors.softBorder,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              ch.name,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AIGlowColors.inkSlate,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              '${matchingArticles.length} Intelligence Articles • Tap any card to open detail modal',
+                              style: const TextStyle(fontSize: 11, color: AIGlowColors.mediumSlate),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: AIGlowColors.inkSlate),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const Divider(color: AIGlowColors.softBorder),
+                  Expanded(
+                    child: matchingArticles.isEmpty
+                        ? const Center(
+                            child: Text('No articles found in this channel yet.', style: TextStyle(color: AIGlowColors.mediumSlate)),
+                          )
+                        : ListView.builder(
+                            controller: controller,
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: matchingArticles.length,
+                            itemBuilder: (context, index) {
+                              return ArticleCard(card: matchingArticles[index]);
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showTopicArticlesModal(BuildContext context, CustomTopic topic, List<IntelligenceCard> allCards) {
+    final matchingArticles = allCards.where((c) {
+      final text = '${c.headline} ${c.summary} ${c.source}'.toLowerCase();
+      return topic.keywords.any((kw) => text.contains(kw.toLowerCase()));
+    }).toList();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.85,
+          maxChildSize: 0.95,
+          minChildSize: 0.5,
+          builder: (_, controller) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: AIGlowColors.cardWhite,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AIGlowColors.softBorder,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Topic Feed: ${topic.name}',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AIGlowColors.inkSlate,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              '${matchingArticles.length} matching articles • Tap card to read intelligence',
+                              style: const TextStyle(fontSize: 11, color: AIGlowColors.mediumSlate),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: AIGlowColors.inkSlate),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const Divider(color: AIGlowColors.softBorder),
+                  Expanded(
+                    child: matchingArticles.isEmpty
+                        ? const Center(
+                            child: Text('No articles matching this topic yet.', style: TextStyle(color: AIGlowColors.mediumSlate)),
+                          )
+                        : ListView.builder(
+                            controller: controller,
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: matchingArticles.length,
+                            itemBuilder: (context, index) {
+                              return ArticleCard(card: matchingArticles[index]);
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
