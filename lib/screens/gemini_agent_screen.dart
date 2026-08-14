@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme/ai_glow_theme.dart';
 import '../providers/app_providers.dart';
 import '../models/app_models.dart';
@@ -57,46 +59,44 @@ class _GeminiAgentScreenState extends ConsumerState<GeminiAgentScreen> {
             children: [
               const SizedBox(height: 12),
 
-              // Grounded Context Badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AIGlowColors.electricCyan.withOpacity(0.1),
-                      AIGlowColors.hyperViolet.withOpacity(0.1),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AIGlowColors.electricCyan.withOpacity(0.3)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          const Icon(Icons.auto_awesome, size: 16, color: AIGlowColors.electricCyan),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              groundedCard != null
-                                  ? 'Grounded in: ${groundedCard.headline}'
-                                  : (groundedContext != null
-                                      ? 'Grounded in: $groundedContext'
-                                      : 'Grounded in: User Taste Profile'),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: AIGlowColors.electricCyan,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
+              // Grounded Context Badge (Only show when explicitly attached)
+              if (groundedCard != null || (groundedContext != null && groundedContext.isNotEmpty)) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AIGlowColors.electricCyan.withOpacity(0.1),
+                        AIGlowColors.hyperViolet.withOpacity(0.1),
+                      ],
                     ),
-                    if (groundedContext != null || groundedCard != null)
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AIGlowColors.electricCyan.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.auto_awesome, size: 16, color: AIGlowColors.electricCyan),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                groundedCard != null
+                                    ? 'Grounded in: ${groundedCard.headline}'
+                                    : 'Grounded in: $groundedContext',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: AIGlowColors.electricCyan,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       GestureDetector(
                         onTap: () {
                           ref.read(groundedContextProvider.notifier).state = null;
@@ -107,10 +107,11 @@ class _GeminiAgentScreenState extends ConsumerState<GeminiAgentScreen> {
                           style: TextStyle(fontSize: 10, color: AIGlowColors.mediumSlate, fontWeight: FontWeight.bold),
                         ),
                       ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
+                const SizedBox(height: 10),
+              ],
 
               // Prompt Chips
               SizedBox(
@@ -523,93 +524,31 @@ class _GeminiAgentScreenState extends ConsumerState<GeminiAgentScreen> {
   }
 
   Widget _buildFormattedMarkdownText(BuildContext context, String rawText) {
-    final List<Widget> children = [];
-    final lines = rawText.split('\n');
-
-    bool inCodeBlock = false;
-    String codeLanguage = 'CODE';
-    final StringBuffer codeBuffer = StringBuffer();
-
-    for (int i = 0; i < lines.length; i++) {
-      final line = lines[i];
-
-      if (line.trim().startsWith('```')) {
-        if (inCodeBlock) {
-          // Close current code block
-          inCodeBlock = false;
-          children.add(const SizedBox(height: 6));
-          children.add(_buildCodeConsoleWidget(context, codeLanguage, codeBuffer.toString().trim()));
-          children.add(const SizedBox(height: 6));
-          codeBuffer.clear();
-        } else {
-          // Start new code block
-          inCodeBlock = true;
-          final langMatch = line.trim().substring(3).trim();
-          codeLanguage = langMatch.isNotEmpty ? langMatch.toUpperCase() : 'CODE';
-        }
-        continue;
-      }
-
-      if (inCodeBlock) {
-        codeBuffer.writeln(line);
-        continue;
-      }
-
-      final trimmed = line.trim();
-      if (trimmed.isEmpty) {
-        children.add(const SizedBox(height: 4));
-        continue;
-      }
-
-      if (trimmed.startsWith('### ') || trimmed.startsWith('#### ')) {
-        final title = trimmed.replaceAll('#', '').trim();
-        children.add(Padding(
-          padding: const EdgeInsets.only(top: 8, bottom: 4),
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: AIGlowColors.inkSlate,
-              letterSpacing: -0.2,
-            ),
-          ),
-        ));
-      } else if (trimmed.startsWith('•') || trimmed.startsWith('*') || trimmed.startsWith('-')) {
-        final content = trimmed.substring(1).trim();
-        children.add(Padding(
-          padding: const EdgeInsets.only(left: 6, bottom: 4),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('• ', style: TextStyle(fontWeight: FontWeight.bold, color: AIGlowColors.electricCyan)),
-              Expanded(
-                child: Text(
-                  content,
-                  style: const TextStyle(fontSize: 13, color: AIGlowColors.inkSlate, height: 1.4),
-                ),
-              ),
-            ],
-          ),
-        ));
-      } else {
-        children.add(Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: Text(
-            trimmed,
-            style: const TextStyle(fontSize: 13, color: AIGlowColors.inkSlate, height: 1.4),
-          ),
-        ));
-      }
-    }
-
-    if (inCodeBlock && codeBuffer.isNotEmpty) {
-      children.add(_buildCodeConsoleWidget(context, codeLanguage, codeBuffer.toString().trim()));
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: children,
+    return MarkdownBody(
+      data: rawText,
+      selectable: true,
+      styleSheet: MarkdownStyleSheet(
+        p: const TextStyle(fontSize: 13, color: AIGlowColors.inkSlate, height: 1.45),
+        h1: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AIGlowColors.inkSlate),
+        h2: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AIGlowColors.inkSlate),
+        h3: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AIGlowColors.inkSlate),
+        h4: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AIGlowColors.inkSlate),
+        strong: const TextStyle(fontWeight: FontWeight.bold, color: AIGlowColors.inkSlate),
+        em: const TextStyle(fontStyle: FontStyle.italic, color: AIGlowColors.mediumSlate),
+        listBullet: const TextStyle(color: AIGlowColors.electricCyan, fontWeight: FontWeight.bold),
+        code: TextStyle(
+          backgroundColor: AIGlowColors.iceWhite,
+          color: AIGlowColors.electricCyan,
+          fontSize: 12,
+          fontFamily: GoogleFonts.jetBrainsMono().fontFamily,
+        ),
+        codeblockDecoration: BoxDecoration(
+          color: const Color(0xFF0F172A),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AIGlowColors.softBorder),
+        ),
+        codeblockPadding: const EdgeInsets.all(12),
+      ),
     );
   }
 

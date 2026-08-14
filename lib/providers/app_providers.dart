@@ -52,7 +52,7 @@ final selectedRoleProvider = StateProvider<String>((ref) => 'ai_ml');
 final followedChannelsProvider = StateProvider<Set<String>>((ref) => {'ai_tools', 'gpus_hw', 'cloud_infra', 'dev_tools'});
 
 // Grounded context for Gemini
-final groundedContextProvider = StateProvider<String?>((ref) => 'DeepSeek-R1 Distillation & Open Reasoning Swarms');
+final groundedContextProvider = StateProvider<String?>((ref) => null);
 final groundedCardProvider = StateProvider<IntelligenceCard?>((ref) => null);
 final isStreamingProvider = StateProvider<bool>((ref) => false);
 final isRefreshingFeedProvider = StateProvider<bool>((ref) => false);
@@ -430,27 +430,25 @@ class ChatNotifier extends StateNotifier<List<ChatMessage>> {
 
     String? derivedTopic;
     final lower = promptText.toLowerCase().trim();
-    final conversationalWords = {'ok', 'okay', 'hello', 'hi', 'hey', 'thanks', 'thank you', 'thx', 'yes', 'no', 'cool', 'nice', 'sure', 'what\'s up', 'whats up', 'how are you', 'great'};
-    final isConversational = conversationalWords.contains(lower) || (lower.length <= 3 && !lower.contains('k8s') && !lower.contains('gpu'));
 
     if (lower.contains('kubernetes') || lower.contains('k8s') || lower.contains('ingress')) {
       derivedTopic = 'Kubernetes Ingress';
-    } else if (lower.contains('deepseek') || lower.contains('reasoning')) {
-      derivedTopic = 'DeepSeek Distillation Architecture';
+    } else if (lower.contains('deepseek') || lower.contains('reasoning') || lower.contains('distillation')) {
+      derivedTopic = 'DeepSeek Reasoning Swarms';
     } else if (lower.contains('terraform') || lower.contains('iac')) {
       derivedTopic = 'Terraform AWS Provider';
-    } else if (lower.contains('finops') || lower.contains('billing')) {
+    } else if (lower.contains('finops') || lower.contains('billing') || lower.contains('cloud cost') || lower.contains('spend')) {
       derivedTopic = 'Cloud FinOps Strategy';
-    } else if (lower.contains('code') || lower.contains('rust') || lower.contains('wasm')) {
+    } else if (lower.contains('rust') || lower.contains('wasm')) {
       derivedTopic = 'Rust WASM Micro-Runtimes';
-    } else if (lower.contains('gpu') || lower.contains('nvidia') || lower.contains('blackwell')) {
+    } else if (lower.contains('blackwell') || lower.contains('b200') || lower.contains('nvlink') || lower.contains('nvidia')) {
       derivedTopic = 'NVIDIA Blackwell & NVLink 5';
     } else if (lower.contains('vllm')) {
       derivedTopic = 'vLLM Performance';
-    } else if (!isConversational && promptText.trim().length > 3) {
-      derivedTopic = promptText.length > 28 ? '${promptText.substring(0, 25)}...' : promptText;
+    } else if (lower.contains('kafka') || lower.contains('grpc')) {
+      derivedTopic = 'Kafka & Distributed Systems';
     } else {
-      derivedTopic = null;
+      derivedTopic = null; // Generic / conversational queries do not create topic buttons
     }
 
     var assistantMsg = ChatMessage(
