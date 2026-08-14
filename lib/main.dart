@@ -31,7 +31,7 @@ void main() async {
 }
 
 class BytePulseApp extends StatelessWidget {
-  const BytePulseApp({Key? key}) : super(key: key);
+  const BytePulseApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +45,7 @@ class BytePulseApp extends StatelessWidget {
 }
 
 class MainNavigationShell extends ConsumerWidget {
-  const MainNavigationShell({Key? key}) : super(key: key);
+  const MainNavigationShell({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

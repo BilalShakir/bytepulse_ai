@@ -4,7 +4,7 @@ import '../theme/ai_glow_theme.dart';
 import '../providers/app_providers.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
-  const OnboardingScreen({Key? key}) : super(key: key);
+  const OnboardingScreen({super.key});
 
   @override
   ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();

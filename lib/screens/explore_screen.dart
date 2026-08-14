@@ -5,7 +5,7 @@ import '../providers/app_providers.dart';
 import '../models/app_models.dart';
 
 class ExploreScreen extends ConsumerStatefulWidget {
-  const ExploreScreen({Key? key}) : super(key: key);
+  const ExploreScreen({super.key});
 
   @override
   ConsumerState<ExploreScreen> createState() => _ExploreScreenState();

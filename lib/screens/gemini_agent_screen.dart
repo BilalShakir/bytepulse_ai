@@ -6,7 +6,7 @@ import '../providers/app_providers.dart';
 import '../models/app_models.dart';
 
 class GeminiAgentScreen extends ConsumerStatefulWidget {
-  const GeminiAgentScreen({Key? key}) : super(key: key);
+  const GeminiAgentScreen({super.key});
 
   @override
   ConsumerState<GeminiAgentScreen> createState() => _GeminiAgentScreenState();
@@ -48,9 +48,12 @@ class _GeminiAgentScreenState extends ConsumerState<GeminiAgentScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
             children: [
               const SizedBox(height: 12),
 
@@ -285,8 +288,10 @@ class _GeminiAgentScreenState extends ConsumerState<GeminiAgentScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 
   Widget _buildStreamingIndicator() {
     return Container(

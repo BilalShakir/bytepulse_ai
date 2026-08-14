@@ -6,7 +6,7 @@ import '../services/fcm_service.dart';
 import '../models/app_models.dart';
 
 class AlertsScreen extends ConsumerStatefulWidget {
-  const AlertsScreen({Key? key}) : super(key: key);
+  const AlertsScreen({super.key});
 
   @override
   ConsumerState<AlertsScreen> createState() => _AlertsScreenState();

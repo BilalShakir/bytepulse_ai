@@ -6,7 +6,7 @@ import '../widgets/article_card.dart';
 import '../models/app_models.dart';
 
 class HomeFeedScreen extends ConsumerStatefulWidget {
-  const HomeFeedScreen({Key? key}) : super(key: key);
+  const HomeFeedScreen({super.key});
 
   @override
   ConsumerState<HomeFeedScreen> createState() => _HomeFeedScreenState();

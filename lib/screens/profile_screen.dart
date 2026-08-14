@@ -35,7 +35,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final bool isSignedIn = user != null || fallbackSignedIn || demoUser != null;
     final String displayName = demoUser?.displayName ?? user?.displayName ?? 'Test Developer';
     final String email = demoUser?.email ?? user?.email ?? 'dev@bytepulse.ai';
-    final String? photoUrl = demoUser?.photoUrl ?? user?.photoURL ?? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80';
+    final String photoUrl = demoUser?.photoUrl ?? user?.photoURL ?? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80';
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -75,14 +75,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               shape: BoxShape.circle,
                               border: Border.all(color: AIGlowColors.electricCyan, width: 2),
                             ),
-                            child: photoUrl != null
-                                ? Image.network(
-                                    photoUrl,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) =>
-                                        const Icon(Icons.person, color: AIGlowColors.electricCyan, size: 26),
-                                  )
-                                : const Icon(Icons.person, color: AIGlowColors.electricCyan, size: 26),
+                            child: Image.network(
+                              photoUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.person, color: AIGlowColors.electricCyan, size: 26),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),

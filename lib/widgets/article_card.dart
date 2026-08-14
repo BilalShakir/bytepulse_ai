@@ -8,7 +8,7 @@ import '../screens/article_detail_sheet.dart';
 class ArticleCard extends ConsumerWidget {
   final IntelligenceCard card;
 
-  const ArticleCard({Key? key, required this.card}) : super(key: key);
+  const ArticleCard({super.key, required this.card});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
