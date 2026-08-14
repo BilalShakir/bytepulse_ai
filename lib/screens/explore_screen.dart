@@ -120,15 +120,21 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Row(
-                              children: [
-                                Icon(Icons.rss_feed, size: 16, color: AIGlowColors.electricCyan),
-                                SizedBox(width: 6),
-                                Text(
-                                  'My Custom Feeds & Followed Topics',
-                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AIGlowColors.inkSlate),
-                                ),
-                              ],
+                            const Flexible(
+                              child: Row(
+                                children: [
+                                  Icon(Icons.rss_feed, size: 16, color: AIGlowColors.electricCyan),
+                                  SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      'My Custom Feeds & Followed Topics',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AIGlowColors.inkSlate),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                             InkWell(
                               onTap: () => _showAddTopicDialog(context, ref),
