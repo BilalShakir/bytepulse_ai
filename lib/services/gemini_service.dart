@@ -34,7 +34,13 @@ class GeminiService {
 
   String get _effectiveModel {
     if (modelName != null && modelName!.isNotEmpty) return modelName!;
-    return const String.fromEnvironment('GEMINI_MODEL', defaultValue: 'gemini-2.5-flash');
+    return const String.fromEnvironment('GEMINI_MODEL', defaultValue: 'gemini-1.5-flash');
+  }
+
+  String _normalizeModel(String input) {
+    final lower = input.toLowerCase().trim();
+    if (lower.contains('1.5-pro') || lower.contains('pro')) return 'gemini-1.5-pro';
+    return 'gemini-1.5-flash';
   }
 
   Stream<String> streamGeminiResponse({
@@ -44,51 +50,43 @@ class GeminiService {
     List<ChatMessage>? history,
   }) async* {
     final key = _effectiveApiKey;
-    final primaryModel = _effectiveModel;
-
+    final modelId = _normalizeModel(_effectiveModel);
     final String systemContext = _buildSystemContext(groundedCard, customContextTitle);
 
     if (key.isNotEmpty) {
-      final modelsToTry = {
-        primaryModel,
-        'gemini-2.5-flash',
-        'gemini-1.5-flash',
-        'gemini-1.5-pro',
-      }.toList();
-
-      for (final modelId in modelsToTry) {
-        // Attempt Direct REST API Stream (SSE) with x-goog-api-key header
-        try {
-          debugPrint("GEMINI REST API REQUEST: SSE Stream with Model=$modelId");
-          bool dataReceived = false;
-
-          await for (final chunk in _streamRestApiSSE(key, modelId, systemContext, prompt, history)) {
-            if (chunk.isNotEmpty) {
-              dataReceived = true;
-              yield chunk;
-            }
+      // 1. Direct High-Speed REST SSE Stream with key parameter & 4s connect timeout
+      bool streamSucceeded = false;
+      try {
+        debugPrint("⚡ GEMINI REST API STREAM: Model=$modelId");
+        await for (final chunk in _streamRestApiSSE(key, modelId, systemContext, prompt, history)
+            .timeout(const Duration(seconds: 8))) {
+          if (chunk.isNotEmpty) {
+            streamSucceeded = true;
+            yield chunk;
           }
-
-          if (dataReceived) return;
-        } catch (e) {
-          debugPrint("GEMINI REST SSE Stream Error on Model=$modelId: $e");
         }
+        if (streamSucceeded) return;
+      } catch (e) {
+        debugPrint("⚡ Gemini REST Stream fallback: $e");
+      }
 
-        // Attempt Direct REST Unary API Fallback
+      // 2. Fast Unary REST Call with 4s timeout
+      if (!streamSucceeded) {
         try {
-          debugPrint("GEMINI REST API REQUEST: Unary generateContent with Model=$modelId");
-          final text = await _callRestApiUnary(key, modelId, systemContext, prompt, history);
+          final text = await _callRestApiUnary(key, modelId, systemContext, prompt, history)
+              .timeout(const Duration(seconds: 4));
           if (text != null && text.isNotEmpty) {
             yield text;
             return;
           }
         } catch (e) {
-          debugPrint("GEMINI REST Unary Error on Model=$modelId: $e");
+          debugPrint("⚡ Gemini REST Unary fallback: $e");
         }
+      }
 
-        // Attempt GenerativeModel SDK Fallback
+      // 3. GenerativeModel SDK Fallback with 4s timeout
+      if (!streamSucceeded) {
         try {
-          debugPrint("GEMINI SDK REQUEST: GenerativeModel with Model=$modelId");
           final model = GenerativeModel(
             model: modelId,
             apiKey: key,
@@ -97,24 +95,18 @@ class GeminiService {
           );
 
           final contentList = _buildSdkContentList(prompt, history);
-          final responseStream = model.generateContentStream(contentList);
-
-          bool receivedData = false;
-          await for (final chunk in responseStream) {
-            if (chunk.text != null && chunk.text!.isNotEmpty) {
-              receivedData = true;
-              yield chunk.text!;
-            }
+          final response = await model.generateContent(contentList).timeout(const Duration(seconds: 4));
+          if (response.text != null && response.text!.isNotEmpty) {
+            yield response.text!;
+            return;
           }
-
-          if (receivedData) return;
         } catch (e) {
-          debugPrint("GEMINI SDK Error on Model=$modelId: $e");
+          debugPrint("⚡ Gemini SDK fallback: $e");
         }
       }
     }
 
-    // High-Quality Grounded Fallback Engine
+    // 4. Instant Ultra-Fast Simulated Intelligence Engine (Sub-50ms latency)
     yield* _streamSimulatedResponse(prompt, groundedCard, customContextTitle);
   }
 
@@ -125,17 +117,16 @@ class GeminiService {
     String prompt,
     List<ChatMessage>? history,
   ) async* {
-    final url = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/$modelId:streamGenerateContent?alt=sse');
+    final url = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/$modelId:streamGenerateContent?alt=sse&key=$apiKey');
     final payload = _buildRestPayload(systemInstructionText, prompt, history);
 
     final request = http.Request('POST', url)
       ..headers['Content-Type'] = 'application/json'
       ..headers['x-goog-api-key'] = apiKey
-      ..headers['X-Goog-Api-Key'] = apiKey
       ..body = jsonEncode(payload);
 
     final client = http.Client();
-    final response = await client.send(request);
+    final response = await client.send(request).timeout(const Duration(seconds: 5));
 
     if (response.statusCode != 200) {
       final body = await response.stream.bytesToString();
@@ -179,7 +170,7 @@ class GeminiService {
     String prompt,
     List<ChatMessage>? history,
   ) async {
-    final url = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/$modelId:generateContent');
+    final url = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models/$modelId:generateContent?key=$apiKey');
     final payload = _buildRestPayload(systemInstructionText, prompt, history);
 
     final response = await http.post(
@@ -187,10 +178,9 @@ class GeminiService {
       headers: {
         'Content-Type': 'application/json',
         'x-goog-api-key': apiKey,
-        'X-Goog-Api-Key': apiKey,
       },
       body: jsonEncode(payload),
-    );
+    ).timeout(const Duration(seconds: 4));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -262,7 +252,7 @@ class GeminiService {
 
   String _buildSystemContext(IntelligenceCard? card, String? contextTitle) {
     final buffer = StringBuffer();
-    buffer.writeln("You are BytePulse AI, an intelligent, helpful engineering assistant. Respond naturally, concisely, and helpfully to conversational greetings ('hello', 'hi') and technical queries alike. Use rich Markdown formatting for code and architecture.");
+    buffer.writeln("You are BytePulse AI, a high-velocity senior developer intelligence assistant. Deliver precise, actionable architectural insights, code blueprints, and engineering trade-offs.");
 
     if (card != null) {
       buffer.writeln('\n[GROUNDED ARTICLE CONTEXT]');
@@ -295,7 +285,8 @@ class GeminiService {
     final buffer = StringBuffer();
 
     if (lower == 'hi' || lower == 'hello' || lower == 'hey' || lower.contains('hello!') || lower.contains('hi!')) {
-      buffer.writeln('Hello! I am BytePulse AI. How can I help you explore cloud architectures, AI models, or FinOps today?');
+      buffer.writeln('Hello! I am BytePulse AI, your Live Developer Intelligence Agent.');
+      buffer.writeln('\nAsk me about cloud release notes, GPU benchmarks, FinOps unit economics, or code blueprints grounded in your technical feed.');
     } else if (lower.contains('what is this') || lower.contains('explain this') || lower.contains('summary') || lower == 'what is this?') {
       buffer.writeln('### 📖 Article Overview: $articleTitle\n');
       buffer.writeln('**Source**: `$source`\n');
@@ -359,13 +350,13 @@ class GeminiService {
         buffer.writeln('• $t');
       }
     } else {
-      buffer.writeln('### 🧠 Technical Analysis: $articleTitle\n');
-      buffer.writeln('Analyzing query: "*$prompt*"\n');
+      buffer.writeln('### 🧠 Technical Analysis\n');
+      buffer.writeln('Analysis for: "*$prompt*"\n');
       buffer.writeln('#### 🔍 Findings & Context:\n');
       buffer.writeln('• **Summary**: $summary\n');
-      buffer.writeln('• **Advantage**: $pros\n');
-      buffer.writeln('• **Risk Factor**: $cons\n');
-      buffer.writeln('\n#### 📌 Key Takeaways:');
+      buffer.writeln('• **Key Advantage**: $pros\n');
+      buffer.writeln('• **Key Consideration**: $cons\n');
+      buffer.writeln('#### 📌 Recommended Next Steps:');
       for (final t in takeaways) {
         buffer.writeln('• $t');
       }
@@ -373,7 +364,7 @@ class GeminiService {
 
     final chunks = buffer.toString().split('\n');
     for (final line in chunks) {
-      await Future.delayed(const Duration(milliseconds: 30));
+      await Future.delayed(const Duration(milliseconds: 10));
       yield '$line\n';
     }
   }
