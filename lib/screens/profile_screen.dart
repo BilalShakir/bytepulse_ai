@@ -689,7 +689,7 @@ class _AuthWorkflowFormState extends State<AuthWorkflowForm> {
               ),
               validator: (val) {
                 if (_isSignUp && (val == null || val.trim().isEmpty)) {
-                  return 'Full name is required';
+                  return 'Name is required';
                 }
                 return null;
               },
@@ -710,11 +710,11 @@ class _AuthWorkflowFormState extends State<AuthWorkflowForm> {
             ),
             validator: (val) {
               if (val == null || val.trim().isEmpty) {
-                return 'Email address is required';
+                return 'Enter a valid email';
               }
               final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
               if (!emailRegex.hasMatch(val.trim())) {
-                return 'Please enter a valid email address';
+                return 'Enter a valid email';
               }
               return null;
             },
@@ -736,10 +736,7 @@ class _AuthWorkflowFormState extends State<AuthWorkflowForm> {
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             ),
             validator: (val) {
-              if (val == null || val.isEmpty) {
-                return 'Password is required';
-              }
-              if (val.length < 6) {
+              if (val == null || val.length < 6) {
                 return 'Password must be at least 6 characters';
               }
               return null;

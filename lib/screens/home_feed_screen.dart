@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/ai_glow_theme.dart';
 import '../providers/app_providers.dart';
 import '../widgets/article_card.dart';
-import '../models/app_models.dart';
 import '../services/firebase_service.dart';
 
 class HomeFeedScreen extends ConsumerStatefulWidget {
@@ -35,7 +34,6 @@ class _HomeFeedScreenState extends ConsumerState<HomeFeedScreen> {
   Widget build(BuildContext context) {
     final activeRole = ref.watch(selectedRoleProvider);
     final roleCards = ref.watch(filteredCardsForRoleProvider);
-    final firestoreStream = ref.watch(liveFirestoreStreamProvider);
     final bookmarks = ref.watch(bookmarksProvider);
     final isRefreshing = ref.watch(isRefreshingFeedProvider);
     final authState = ref.watch(authUserProvider);
@@ -46,18 +44,7 @@ class _HomeFeedScreenState extends ConsumerState<HomeFeedScreen> {
     final String displayName = userProfile?.displayName ?? demoUser?.displayName ?? user?.displayName ?? 'Developer';
     final String photoUrl = userProfile?.photoUrl ?? demoUser?.photoUrl ?? user?.photoURL ?? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80';
 
-    // Merge live Firestore stream articles with role cards without duplicates
-    final List<IntelligenceCard> cloudArticles = firestoreStream.value ?? [];
-    final Map<String, IntelligenceCard> cardMap = {};
-    for (final card in roleCards) {
-      cardMap[card.id] = card;
-    }
-    for (final card in cloudArticles) {
-      if (!cardMap.containsKey(card.id)) {
-        cardMap[card.id] = card;
-      }
-    }
-    final allCards = cardMap.values.toList();
+    final allCards = roleCards;
 
     final filteredCards = searchQuery.isEmpty
         ? allCards

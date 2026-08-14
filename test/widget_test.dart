@@ -108,8 +108,8 @@ void main() {
       await tester.tap(find.text('Sign In to Account'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Email address is required'), findsOneWidget);
-      expect(find.text('Password is required'), findsOneWidget);
+      expect(find.text('Enter a valid email'), findsOneWidget);
+      expect(find.text('Password must be at least 6 characters'), findsOneWidget);
       expect(successEmail, isNull);
 
       // Enter invalid email format
@@ -118,7 +118,7 @@ void main() {
       await tester.tap(find.text('Sign In to Account'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Please enter a valid email address'), findsOneWidget);
+      expect(find.text('Enter a valid email'), findsOneWidget);
       expect(find.text('Password must be at least 6 characters'), findsOneWidget);
       expect(successEmail, isNull);
 
@@ -135,7 +135,7 @@ void main() {
       await tester.tap(find.text('Complete Sign Up'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Full name is required'), findsOneWidget);
+      expect(find.text('Name is required'), findsOneWidget);
       expect(successEmail, isNull);
     });
   });
@@ -149,7 +149,7 @@ void main() {
       final devopsCards = container.read(filteredCardsForRoleProvider);
       expect(devopsCards.isNotEmpty, isTrue);
       for (final card in devopsCards) {
-        expect(card.transparencyReason, contains('DevOps & Cloud Engineer'));
+        expect(card.transparencyReason, contains('DevOps & Cloud Infrastructure'));
       }
 
       // Test FinOps Role

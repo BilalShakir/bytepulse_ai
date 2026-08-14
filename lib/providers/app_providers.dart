@@ -124,7 +124,7 @@ class CardsNotifier extends StateNotifier<List<IntelligenceCard>> {
             credibilityType: CredibilityType.verified,
             source: 'Verified • Hacker News Engineering Thread',
             readTime: '3 min read',
-            transparencyReason: 'Because your active role is AI / ML Engineer',
+            transparencyReason: 'Matched via LLM distillation vector',
             pros: 'Pros: 84% lower VRAM overhead, runnable on single RTX 4090',
             cons: 'Cons: Requires custom vLLM 0.6.2 runtime patch',
             channelId: 'ai_tools',
@@ -143,7 +143,7 @@ class CardsNotifier extends StateNotifier<List<IntelligenceCard>> {
             credibilityType: CredibilityType.official,
             source: 'Official • Google Cloud Docs',
             readTime: '4 min read',
-            transparencyReason: 'Because your active role is AI / ML Engineer',
+            transparencyReason: 'Matched via Cloud AI provider vector',
             pros: 'Pros: Zero regex parsing needed for tool invocation',
             cons: 'Cons: Strict JSON schema compliance required',
             channelId: 'ai_tools',
@@ -162,7 +162,7 @@ class CardsNotifier extends StateNotifier<List<IntelligenceCard>> {
             credibilityType: CredibilityType.analysis,
             source: 'Analysis • SemiAnalysis DeepDive',
             readTime: '6 min read',
-            transparencyReason: 'Because your active role is AI / ML Engineer',
+            transparencyReason: 'Matched via Datacenter Hardware vector',
             pros: 'Pros: 2.8x throughput speedup over H100 SXM5',
             cons: 'Cons: Mandatory direct-to-chip liquid cooling',
             channelId: 'gpus_hw',
@@ -183,7 +183,7 @@ class CardsNotifier extends StateNotifier<List<IntelligenceCard>> {
             credibilityType: CredibilityType.official,
             source: 'Official • Kubernetes Security Advisory',
             readTime: '4 min read',
-            transparencyReason: 'Because your active role is DevOps & Cloud Engineer',
+            transparencyReason: 'Matched via Cloud Security vector',
             pros: 'Pros: Fixes remote privilege escalation in NGINX ingress',
             cons: 'Cons: Requires rolling pod restart across nodes',
             channelId: 'cloud_infra',
@@ -202,7 +202,7 @@ class CardsNotifier extends StateNotifier<List<IntelligenceCard>> {
             credibilityType: CredibilityType.official,
             source: 'Official • HashiCorp Release Blog',
             readTime: '3 min read',
-            transparencyReason: 'Because your active role is DevOps & Cloud Engineer',
+            transparencyReason: 'Matched via Infrastructure-as-Code vector',
             pros: 'Pros: 75% reduction in CI/CD pipeline execution duration',
             cons: 'Cons: Requires updated provider block configuration',
             channelId: 'cloud_infra',
@@ -223,7 +223,7 @@ class CardsNotifier extends StateNotifier<List<IntelligenceCard>> {
             credibilityType: CredibilityType.analysis,
             source: 'Analysis • Cloud FinOps Weekly',
             readTime: '5 min read',
-            transparencyReason: 'Because your active role is FinOps Consultant',
+            transparencyReason: 'Matched via Cloud Spend Optimization vector',
             pros: 'Pros: 62% reduction in monthly GPU compute bills',
             cons: 'Cons: Slight P99 latency increase during off-peak hours',
             channelId: 'dev_tools',
@@ -242,7 +242,7 @@ class CardsNotifier extends StateNotifier<List<IntelligenceCard>> {
             credibilityType: CredibilityType.verified,
             source: 'Verified • Cloud Architecture Journal',
             readTime: '4 min read',
-            transparencyReason: 'Because your active role is FinOps Consultant',
+            transparencyReason: 'Matched via Billing API vector',
             pros: 'Pros: Real-time per-query cost attribution for LLM APIs',
             cons: 'Cons: Requires setting up GCS cost export buckets',
             channelId: 'dev_tools',
@@ -263,7 +263,7 @@ class CardsNotifier extends StateNotifier<List<IntelligenceCard>> {
             credibilityType: CredibilityType.speculation,
             source: 'Speculation • Developer Forum Leak',
             readTime: '2 min read',
-            transparencyReason: 'Because your active role is Software Architect',
+            transparencyReason: 'Matched via Edge Systems vector',
             pros: 'Pros: Sub-millisecond cold start overhead',
             cons: 'Cons: Unconfirmed API stability & edge benchmarks',
             channelId: 'dev_tools',
@@ -282,7 +282,7 @@ class CardsNotifier extends StateNotifier<List<IntelligenceCard>> {
             credibilityType: CredibilityType.analysis,
             source: 'Analysis • Software Architecture Review',
             readTime: '7 min read',
-            transparencyReason: 'Because your active role is Software Architect',
+            transparencyReason: 'Matched via Distributed Systems vector',
             pros: 'Pros: High fault tolerance with zero message loss guarantee',
             cons: 'Cons: Increased architectural complexity for schema evolution',
             channelId: 'dev_tools',
@@ -352,13 +352,13 @@ final filteredCardsForRoleProvider = Provider<List<IntelligenceCard>>((ref) {
   final role = ref.watch(selectedRoleProvider);
   final cards = ref.watch(intelligenceCardsProvider);
 
-  String roleLabel = 'AI / ML Engineer';
+  String reasonLabel = '✨ Because your active role is AI / ML Engineer';
   if (role == 'devops') {
-    roleLabel = 'DevOps & Cloud Engineer';
+    reasonLabel = '✨ Because your active role is DevOps & Cloud Infrastructure';
   } else if (role == 'finops') {
-    roleLabel = 'FinOps Consultant';
+    reasonLabel = '✨ Because your active role is FinOps Consultant';
   } else if (role == 'arch' || role == 'architect') {
-    roleLabel = 'Software Systems Architect';
+    reasonLabel = '✨ Because your active role is Software Systems Architect';
   }
 
   final filtered = cards.where((card) {
@@ -392,7 +392,7 @@ final filteredCardsForRoleProvider = Provider<List<IntelligenceCard>>((ref) {
 
   return filtered.map((card) {
     return card.copyWith(
-      transparencyReason: '✨ Because your active role is $roleLabel',
+      transparencyReason: reasonLabel,
     );
   }).toList();
 });
