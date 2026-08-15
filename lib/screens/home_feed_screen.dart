@@ -247,7 +247,8 @@ class _HomeFeedScreenState extends ConsumerState<HomeFeedScreen> {
                   child: filteredCards.isEmpty
                       ? _buildEmptyState()
                       : ListView.builder(
-                          physics: const BouncingScrollPhysics(),
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.only(bottom: 90, top: 4),
                           itemCount: filteredCards.length,
                           itemBuilder: (context, index) {
                             final card = filteredCards[index];

@@ -64,7 +64,12 @@ class MainNavigationShell extends ConsumerWidget {
       children: [
         Scaffold(
           extendBody: true,
-          body: screens[activeTab],
+          body: SizedBox.expand(
+            child: IndexedStack(
+              index: activeTab,
+              children: screens,
+            ),
+          ),
 
           // Modern Level Bottom Navigation Bar
           bottomNavigationBar: Container(
